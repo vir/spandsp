@@ -31361,8 +31361,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (exit $ac_status); }; }; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-         COMP_VENDOR_CFLAGS="-fvisibility=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
-         COMP_VENDOR_CXXFLAGS="-fvisibility=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
+         COMP_VENDOR_CFLAGS="-fvisibility=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
+         COMP_VENDOR_CXXFLAGS="-fvisibility=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_export_capability="yes"
 else
   echo "$as_me: failed program was:" >&5
@@ -31419,8 +31419,8 @@ if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (exit $ac_status); }; }; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
-         COMP_VENDOR_CFLAGS="-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
-         COMP_VENDOR_CXXFLAGS="-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
+         COMP_VENDOR_CFLAGS="-xldscope=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
+         COMP_VENDOR_CXXFLAGS="-xldscope=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_export_capability="yes"
 else
   echo "$as_me: failed program was:" >&5

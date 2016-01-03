@@ -42,10 +42,6 @@
 #include "spandsp/complex.h"
 #include "spandsp/dds.h"
 
-#if !defined(M_PI)
-# define M_PI           3.14159265358979323846  /* pi */
-#endif
-
 /* In a A-law or u-law channel, a 128 step sine table is adequate to keep the spectral
    mess due to the DDS at a similar level to the spectral mess due to the A-law or u-law
    compression. */
@@ -56,7 +52,7 @@
 /* This is a simple set of direct digital synthesis (DDS) functions to generate sine
    waves. This version uses a 128 entry sin/cos table to cover one quadrant. */
 
-static const int16_t sine_table[DDS_STEPS] =
+static const int16_t sine_table[DDS_STEPS + 1] =
 {
        201,
        603,
@@ -186,6 +182,7 @@ static const int16_t sine_table[DDS_STEPS] =
      32753,
      32762,
      32767,
+     32767
 };
 
 SPAN_DECLARE(int32_t) dds_phase_rate(float frequency)
@@ -254,7 +251,7 @@ SPAN_DECLARE(int16_t) dds_mod(uint32_t *phase_acc, int32_t phase_rate, int16_t s
 {
     int16_t amp;
 
-    amp = (int16_t) (((int32_t) dds_lookup(*phase_acc + phase)*(int32_t) scale) >> 15);
+    amp = (int16_t) (((int32_t) dds_lookup(*phase_acc + phase)*scale) >> 15);
     *phase_acc += phase_rate;
     return amp;
 }
@@ -280,8 +277,8 @@ SPAN_DECLARE(complexi_t) dds_complexi_mod(uint32_t *phase_acc, int32_t phase_rat
 {
     complexi_t amp;
 
-    amp = complex_seti(((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*(int32_t) scale) >> 15,
-                       ((int32_t) dds_lookup(*phase_acc + phase)*(int32_t) scale) >> 15);
+    amp = complex_seti(((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*scale) >> 15,
+                       ((int32_t) dds_lookup(*phase_acc + phase)*scale) >> 15);
     *phase_acc += phase_rate;
     return amp;
 }
@@ -307,8 +304,8 @@ SPAN_DECLARE(complexi16_t) dds_complexi16_mod(uint32_t *phase_acc, int32_t phase
 {
     complexi16_t amp;
 
-    amp = complex_seti16((int16_t) (((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*(int32_t) scale) >> 15),
-                         (int16_t) (((int32_t) dds_lookup(*phase_acc + phase)*(int32_t) scale) >> 15));
+    amp = complex_seti16((int16_t) (((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*scale) >> 15),
+                         (int16_t) (((int32_t) dds_lookup(*phase_acc + phase)*scale) >> 15));
     *phase_acc += phase_rate;
     return amp;
 }
@@ -334,8 +331,8 @@ SPAN_DECLARE(complexi32_t) dds_complexi32_mod(uint32_t *phase_acc, int32_t phase
 {
     complexi32_t amp;
 
-    amp = complex_seti32(((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*(int32_t) scale) >> 15,
-                         ((int32_t) dds_lookup(*phase_acc + phase)*(int32_t) scale) >> 15);
+    amp = complex_seti32(((int32_t) dds_lookup(*phase_acc + phase + (1 << 30))*scale) >> 15,
+                         ((int32_t) dds_lookup(*phase_acc + phase)*scale) >> 15);
     *phase_acc += phase_rate;
     return amp;
 }
