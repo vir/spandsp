@@ -45,12 +45,12 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	config/ltmain.sh config/missing
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ax_compiler_vendor.m4 \
-	$(top_srcdir)/config/ax_check_real_file.m4 \
-	$(top_srcdir)/config/ax_fixed_point_machine.m4 \
-	$(top_srcdir)/config/ax_misaligned_access_fails.m4 \
-	$(top_srcdir)/config/ax_c99_features.m4 \
-	$(top_srcdir)/config/ax_check_export_capability.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_vendor.m4 \
+	$(top_srcdir)/m4/ax_check_real_file.m4 \
+	$(top_srcdir)/m4/ax_fixed_point_machine.m4 \
+	$(top_srcdir)/m4/ax_misaligned_access_fails.m4 \
+	$(top_srcdir)/m4/ax_c99_features.m4 \
+	$(top_srcdir)/m4/ax_check_export_capability.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -148,6 +148,9 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 F77 = @F77@
 FFLAGS = @FFLAGS@
+HAVE_FAX2TIFF = @HAVE_FAX2TIFF@
+HAVE_PBMTOG3 = @HAVE_PBMTOG3@
+HAVE_SOX = @HAVE_SOX@
 INSERT_INTTYPES_HEADER = @INSERT_INTTYPES_HEADER@
 INSERT_MATH_HEADER = @INSERT_MATH_HEADER@
 INSERT_STDINT_HEADER = @INSERT_STDINT_HEADER@
@@ -181,6 +184,8 @@ SPANDSP_LT_AGE = @SPANDSP_LT_AGE@
 SPANDSP_LT_CURRENT = @SPANDSP_LT_CURRENT@
 SPANDSP_LT_REVISION = @SPANDSP_LT_REVISION@
 SPANDSP_MISALIGNED_ACCESS_FAILS = @SPANDSP_MISALIGNED_ACCESS_FAILS@
+SPANDSP_SUPPORT_T42 = @SPANDSP_SUPPORT_T42@
+SPANDSP_SUPPORT_T43 = @SPANDSP_SUPPORT_T43@
 SPANDSP_SUPPORT_T85 = @SPANDSP_SUPPORT_T85@
 SPANDSP_SUPPORT_V34 = @SPANDSP_SUPPORT_V34@
 SPANDSP_USE_EXPORT_CAPABILITY = @SPANDSP_USE_EXPORT_CAPABILITY@
@@ -233,6 +238,7 @@ sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
 sysconfdir = @sysconfdir@
 target_alias = @target_alias@
+ACLOCAL_AMFLAGS = -I m4
 AM_CFLAGS = $(COMP_VENDOR_CFLAGS)
 AM_LDFLAGS = $(COMP_VENDOR_LDFLAGS)
 noinst_SCRIPTS = spandsp.spec
@@ -472,7 +478,7 @@ distclean-tags:
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
 	mkdir $(distdir)
-	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/debian $(distdir)/doc $(distdir)/spandsp $(distdir)/src
+	$(mkdir_p) $(distdir)/. $(distdir)/config $(distdir)/debian $(distdir)/doc $(distdir)/m4 $(distdir)/spandsp $(distdir)/src
 	@srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's|.|.|g'`; \
 	list='$(DISTFILES)'; for file in $$list; do \

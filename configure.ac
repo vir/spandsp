@@ -20,12 +20,12 @@
 
 AC_INIT
 
-m4_include(config/ax_compiler_vendor.m4)
-m4_include(config/ax_check_real_file.m4)
-m4_include(config/ax_fixed_point_machine.m4)
-m4_include(config/ax_misaligned_access_fails.m4)
-m4_include(config/ax_c99_features.m4)
-m4_include(config/ax_check_export_capability.m4)
+m4_include(m4/ax_compiler_vendor.m4)
+m4_include(m4/ax_check_real_file.m4)
+m4_include(m4/ax_fixed_point_machine.m4)
+m4_include(m4/ax_misaligned_access_fails.m4)
+m4_include(m4/ax_c99_features.m4)
+m4_include(m4/ax_check_export_capability.m4)
 
 SPANDSP_MAJOR_VERSION=0
 SPANDSP_MINOR_VERSION=0
@@ -209,7 +209,7 @@ AC_CHECK_HEADERS([pcap.h])
 AC_CHECK_HEADERS([pthread.h])
 if test "${build}" == "${host}"
 then
-  AC_CHECK_HEADERS([X11/X.h])
+    AC_CHECK_HEADERS([X11/X.h])
 fi
 
 # Determine XML2 include path
@@ -266,6 +266,10 @@ then
     esac
 fi
 
+#AC_DEFINE([SPANDSP_SUPPORT_T42], [1], [Support T.42 JPEG compression])
+SPANDSP_SUPPORT_T42="#undef SPANDSP_SUPPORT_T42"
+#AC_DEFINE([SPANDSP_SUPPORT_T43], [1], [Support T.43 JBIG gray and colour compression])
+SPANDSP_SUPPORT_T43="#undef SPANDSP_SUPPORT_T43"
 #AC_DEFINE([SPANDSP_SUPPORT_T85], [0], [Support T.85 JBIG compression])
 SPANDSP_SUPPORT_T85="#undef SPANDSP_SUPPORT_T85"
 #AC_DEFINE([SPANDSP_SUPPORT_V34], [0], [Support the V.34 FAX modem])
@@ -287,14 +291,28 @@ AC_SEARCH_LIBS([expf], [m], AC_DEFINE([HAVE_EXPF], [1], [Define to 1 if you have
 AC_SEARCH_LIBS([logf], [m], AC_DEFINE([HAVE_LOGF], [1], [Define to 1 if you have the logf() function.]))
 AC_SEARCH_LIBS([log10f], [m], AC_DEFINE([HAVE_LOG10F], [1], [Define to 1 if you have the log10f() function.]))
 
+AC_SEARCH_LIBS([open_memstream], [m], AC_DEFINE([HAVE_OPEN_MEMSTREAM], [1], [Define to 1 if you have the open_memstream() function.]))
+
 # Checks for libraries.
 AC_CHECK_LIB([xml2], [xmlParseFile], [AC_DEFINE([HAVE_LIBXML2], [1], [Define to 1 if you have the 'libxml2' library (-lxml2).]) SIMLIBS="$SIMLIBS -lxml2"])
 
 if test -n "$enable_tests" ; then
+    AC_CHECK_PROG([HAVE_SOX], [sox], yes)
+    if test "x$HAVE_SOX" != "xyes" ; then
+        AC_MSG_ERROR("Cannot make tests without sox installed")
+    fi
+    AC_CHECK_PROG([HAVE_PBMTOG3], [pbmtog3], yes)
+    if test "x$HAVE_PBMTOG3" != "xyes" ; then
+        AC_MSG_ERROR("Cannot make tests without pbmtog3 installed (does your system require a netpbm-progs package?)")
+    fi
+    AC_CHECK_PROG([HAVE_FAX2TIFF], [fax2tiff], yes)
+    if test "x$HAVE_FAX2TIFF" != "xyes" ; then
+        AC_MSG_ERROR("Cannot make tests without fax2tiff installed (does your system require a libtiff-tools package?)")
+    fi
     AC_LANG([C])
-    AC_CHECK_LIB([sndfile], [sf_open], SIMLIBS="$SIMLIBS -lsndfile", AC_MSG_ERROR("Can't make tests without libsndfile (does your system require a libsndfile-devel package?)"))
-    AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], SIMLIBS="$SIMLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], SIMLIBS="$SIMLIBS -lfftw", AC_MSG_ERROR("Can't make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)"))])
-    AC_CHECK_LIB([pcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lpcap", AC_MSG_ERROR("Can't make tests without libpcap (does your system require a libpcap-devel package?)"))
+    AC_CHECK_LIB([sndfile], [sf_open], SIMLIBS="$SIMLIBS -lsndfile", AC_MSG_ERROR("Cannot make tests without libsndfile (does your system require a libsndfile-devel package?)"))
+    AC_CHECK_LIB([fftw3], [fftw_plan_dft_1d], SIMLIBS="$SIMLIBS -lfftw3", [AC_CHECK_LIB([fftw], [fftw_create_plan], SIMLIBS="$SIMLIBS -lfftw", AC_MSG_ERROR("Cannot make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)"))])
+    AC_CHECK_LIB([pcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lpcap", [AC_CHECK_LIB([wpcap], [pcap_open_offline], TESTLIBS="$TESTLIBS -lwpcap",  AC_MSG_ERROR("Cannot make tests without libpcap (does your system require an libpcap-devel package?)"))])
     AC_CHECK_LIB([pthread], [pthread_attr_init], TESTLIBS="$TESTLIBS -lpthread")
     AC_CHECK_LIB([dl], [dlopen], TESTLIBS="$TESTLIBS -ldl")
     AC_CHECK_LIB([Xft], [XftFontOpen], TESTLIBS="$TESTLIBS -lXft",, $TESTLIBS)
@@ -481,11 +499,17 @@ if test "$enable_builtin_tiff" = "yes" ; then
   AC_DEFINE([HAVE_LIBTIFF], [1], [Define to 1 if you have the `tiff' library (-ltiff).])
 else
   AC_CHECK_HEADERS([tiffio.h])
-  AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Can't build without libtiff (does your system require a libtiff-devel package?)"), -lm)
+  AC_CHECK_LIB([tiff], [TIFFOpen], , AC_MSG_ERROR("Cannot build without libtiff (does your system require a libtiff-devel package?)"), -lm)
 fi
+
+AC_CHECK_HEADERS([jpeglib.h])
+AC_CHECK_LIB([jpeg], [jpeg_start_compress])
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
 
+AC_SUBST(SPANDSP_LT_CURRENT)
+AC_SUBST(SPANDSP_LT_REVISION)
+AC_SUBST(SPANDSP_LT_AGE)
 AC_SUBST(CC_FOR_BUILD)
 AC_SUBST(CPPFLAGS_FOR_BUILD)
 AC_SUBST(COMP_VENDOR_CFLAGS)
@@ -495,6 +519,8 @@ AC_SUBST(TESTLIBS)
 AC_SUBST(SPANDSP_USE_FIXED_POINT)
 AC_SUBST(SPANDSP_MISALIGNED_ACCESS_FAILS)
 AC_SUBST(SPANDSP_USE_EXPORT_CAPABILITY)
+AC_SUBST(SPANDSP_SUPPORT_T42)
+AC_SUBST(SPANDSP_SUPPORT_T43)
 AC_SUBST(SPANDSP_SUPPORT_T85)
 AC_SUBST(SPANDSP_SUPPORT_V34)
 AC_SUBST(INSERT_INTTYPES_HEADER)

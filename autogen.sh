@@ -106,6 +106,8 @@ version_compare()
 
 # Check for required version and die if unhappy
 
+mkdir config
+
 if [ "x$UNAME" = "xFreeBSD" ]; then
 version_compare libtoolize 1 5 16 || exit 1
 version_compare automake19 1 9 5 || exit 1

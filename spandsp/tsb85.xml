@@ -1342,7 +1342,7 @@
         <step dir="T" type="HDLC" tag="PPS-NULL" value="FF C8 7D 00 00 00 FF"/>
         <step dir="T" type="POSTAMBLE"/>
 
-        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00"/>
+        <step dir="R" type="HDLC" modem="V.21" tag="PPR" value="FF C8 3D 80 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 ff ff ff ff ff"/>
         <step dir="R" type="SILENCE"/>
 
         <step type="WAIT" value="75"/>
