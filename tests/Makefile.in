@@ -53,28 +53,28 @@ noinst_PROGRAMS = adsi_tests$(EXEEXT) async_tests$(EXEEXT) \
 	gsm0610_tests$(EXEEXT) hdlc_tests$(EXEEXT) \
 	ima_adpcm_tests$(EXEEXT) image_translate_tests$(EXEEXT) \
 	line_model_tests$(EXEEXT) logging_tests$(EXEEXT) \
-	lpc10_tests$(EXEEXT) make_g168_css$(EXEEXT) \
-	modem_connect_tones_tests$(EXEEXT) modem_echo_tests$(EXEEXT) \
-	noise_tests$(EXEEXT) oki_adpcm_tests$(EXEEXT) \
-	playout_tests$(EXEEXT) plc_tests$(EXEEXT) \
-	power_meter_tests$(EXEEXT) queue_tests$(EXEEXT) \
-	r2_mf_rx_tests$(EXEEXT) r2_mf_tx_tests$(EXEEXT) \
-	rfc2198_sim_tests$(EXEEXT) saturated_tests$(EXEEXT) \
-	schedule_tests$(EXEEXT) sig_tone_tests$(EXEEXT) \
-	super_tone_rx_tests$(EXEEXT) super_tone_tx_tests$(EXEEXT) \
-	swept_tone_tests$(EXEEXT) t4_tests$(EXEEXT) t31_tests$(EXEEXT) \
-	t38_core_tests$(EXEEXT) t38_decode$(EXEEXT) \
+	lpc10_tests$(EXEEXT) math_fixed_tests$(EXEEXT) \
+	make_g168_css$(EXEEXT) modem_connect_tones_tests$(EXEEXT) \
+	modem_echo_tests$(EXEEXT) noise_tests$(EXEEXT) \
+	oki_adpcm_tests$(EXEEXT) playout_tests$(EXEEXT) \
+	plc_tests$(EXEEXT) power_meter_tests$(EXEEXT) \
+	queue_tests$(EXEEXT) r2_mf_rx_tests$(EXEEXT) \
+	r2_mf_tx_tests$(EXEEXT) rfc2198_sim_tests$(EXEEXT) \
+	saturated_tests$(EXEEXT) schedule_tests$(EXEEXT) \
+	sig_tone_tests$(EXEEXT) super_tone_rx_tests$(EXEEXT) \
+	super_tone_tx_tests$(EXEEXT) swept_tone_tests$(EXEEXT) \
+	t31_tests$(EXEEXT) t38_core_tests$(EXEEXT) t38_decode$(EXEEXT) \
 	t38_gateway_tests$(EXEEXT) \
 	t38_gateway_to_terminal_tests$(EXEEXT) \
 	t38_non_ecm_buffer_tests$(EXEEXT) t38_terminal_tests$(EXEEXT) \
-	t38_terminal_to_gateway_tests$(EXEEXT) \
+	t38_terminal_to_gateway_tests$(EXEEXT) t4_tests$(EXEEXT) \
 	time_scale_tests$(EXEEXT) timezone_tests$(EXEEXT) \
 	tone_detect_tests$(EXEEXT) tone_generate_tests$(EXEEXT) \
 	tsb85_tests$(EXEEXT) v17_tests$(EXEEXT) v18_tests$(EXEEXT) \
 	v22bis_tests$(EXEEXT) v27ter_tests$(EXEEXT) v29_tests$(EXEEXT) \
 	v42_tests$(EXEEXT) v42bis_tests$(EXEEXT) v8_tests$(EXEEXT) \
 	vector_float_tests$(EXEEXT) vector_int_tests$(EXEEXT) \
-	testadsi$(EXEEXT) testfax$(EXEEXT) tsb85_tests$(EXEEXT)
+	tsb85_tests$(EXEEXT)
 subdir = tests
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -199,6 +199,9 @@ lpc10_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_make_g168_css_OBJECTS = make_g168_css.$(OBJEXT)
 make_g168_css_OBJECTS = $(am_make_g168_css_OBJECTS)
 make_g168_css_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_math_fixed_tests_OBJECTS = math_fixed_tests.$(OBJEXT)
+math_fixed_tests_OBJECTS = $(am_math_fixed_tests_OBJECTS)
+math_fixed_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_modem_connect_tones_tests_OBJECTS =  \
 	modem_connect_tones_tests.$(OBJEXT)
 modem_connect_tones_tests_OBJECTS =  \
@@ -294,12 +297,6 @@ t38_terminal_to_gateway_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_t4_tests_OBJECTS = t4_tests.$(OBJEXT)
 t4_tests_OBJECTS = $(am_t4_tests_OBJECTS)
 t4_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_testadsi_OBJECTS = testadsi.$(OBJEXT)
-testadsi_OBJECTS = $(am_testadsi_OBJECTS)
-testadsi_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_testfax_OBJECTS = testfax.$(OBJEXT)
-testfax_OBJECTS = $(am_testfax_OBJECTS)
-testfax_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_time_scale_tests_OBJECTS = time_scale_tests.$(OBJEXT)
 time_scale_tests_OBJECTS = $(am_time_scale_tests_OBJECTS)
 time_scale_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -386,7 +383,8 @@ SOURCES = $(adsi_tests_SOURCES) $(async_tests_SOURCES) \
 	$(hdlc_tests_SOURCES) $(ima_adpcm_tests_SOURCES) \
 	$(image_translate_tests_SOURCES) $(line_model_tests_SOURCES) \
 	$(logging_tests_SOURCES) $(lpc10_tests_SOURCES) \
-	$(make_g168_css_SOURCES) $(modem_connect_tones_tests_SOURCES) \
+	$(make_g168_css_SOURCES) $(math_fixed_tests_SOURCES) \
+	$(modem_connect_tones_tests_SOURCES) \
 	$(modem_echo_tests_SOURCES) $(noise_tests_SOURCES) \
 	$(oki_adpcm_tests_SOURCES) $(playout_tests_SOURCES) \
 	$(plc_tests_SOURCES) $(power_meter_tests_SOURCES) \
@@ -401,7 +399,6 @@ SOURCES = $(adsi_tests_SOURCES) $(async_tests_SOURCES) \
 	$(t38_non_ecm_buffer_tests_SOURCES) \
 	$(t38_terminal_tests_SOURCES) \
 	$(t38_terminal_to_gateway_tests_SOURCES) $(t4_tests_SOURCES) \
-	$(testadsi_SOURCES) $(testfax_SOURCES) \
 	$(time_scale_tests_SOURCES) $(timezone_tests_SOURCES) \
 	$(tone_detect_tests_SOURCES) $(tone_generate_tests_SOURCES) \
 	$(tsb85_tests_SOURCES) $(v17_tests_SOURCES) \
@@ -427,7 +424,8 @@ DIST_SOURCES = $(adsi_tests_SOURCES) $(async_tests_SOURCES) \
 	$(hdlc_tests_SOURCES) $(ima_adpcm_tests_SOURCES) \
 	$(image_translate_tests_SOURCES) $(line_model_tests_SOURCES) \
 	$(logging_tests_SOURCES) $(lpc10_tests_SOURCES) \
-	$(make_g168_css_SOURCES) $(modem_connect_tones_tests_SOURCES) \
+	$(make_g168_css_SOURCES) $(math_fixed_tests_SOURCES) \
+	$(modem_connect_tones_tests_SOURCES) \
 	$(modem_echo_tests_SOURCES) $(noise_tests_SOURCES) \
 	$(oki_adpcm_tests_SOURCES) $(playout_tests_SOURCES) \
 	$(plc_tests_SOURCES) $(power_meter_tests_SOURCES) \
@@ -442,7 +440,6 @@ DIST_SOURCES = $(adsi_tests_SOURCES) $(async_tests_SOURCES) \
 	$(t38_non_ecm_buffer_tests_SOURCES) \
 	$(t38_terminal_tests_SOURCES) \
 	$(t38_terminal_to_gateway_tests_SOURCES) $(t4_tests_SOURCES) \
-	$(testadsi_SOURCES) $(testfax_SOURCES) \
 	$(time_scale_tests_SOURCES) $(timezone_tests_SOURCES) \
 	$(tone_detect_tests_SOURCES) $(tone_generate_tests_SOURCES) \
 	$(tsb85_tests_SOURCES) $(v17_tests_SOURCES) \
@@ -702,6 +699,8 @@ logging_tests_SOURCES = logging_tests.c
 logging_tests_LDADD = $(LIBDIR) -lspandsp
 lpc10_tests_SOURCES = lpc10_tests.c
 lpc10_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+math_fixed_tests_SOURCES = math_fixed_tests.c
+math_fixed_tests_LDADD = $(LIBDIR) -lspandsp
 make_g168_css_SOURCES = make_g168_css.c
 make_g168_css_LDADD = $(LIBDIR) -lspandsp
 modem_echo_tests_SOURCES = modem_echo_tests.c echo_monitor.cpp
@@ -745,7 +744,7 @@ t31_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspands
 t38_core_tests_SOURCES = t38_core_tests.c
 t38_core_tests_LDADD = $(LIBDIR) -lspandsp
 t38_decode_SOURCES = t38_decode.c fax_utils.c pcap_parse.c udptl.c
-t38_decode_LDADD = $(LIBDIR) -lspandsp -lpcap
+t38_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp -lpcap
 t38_gateway_tests_SOURCES = t38_gateway_tests.c fax_utils.c media_monitor.cpp
 t38_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 t38_gateway_to_terminal_tests_SOURCES = t38_gateway_to_terminal_tests.c fax_utils.c media_monitor.cpp
@@ -786,10 +785,6 @@ vector_float_tests_SOURCES = vector_float_tests.c
 vector_float_tests_LDADD = $(LIBDIR) -lspandsp
 vector_int_tests_SOURCES = vector_int_tests.c
 vector_int_tests_LDADD = $(LIBDIR) -lspandsp
-testadsi_SOURCES = testadsi.c
-testadsi_LDADD = $(LIBDIR) -lspandsp
-testfax_SOURCES = testfax.c
-testfax_LDADD = $(LIBDIR) -lspandsp
 all: all-am
 
 .SUFFIXES:
@@ -932,6 +927,9 @@ lpc10_tests$(EXEEXT): $(lpc10_tests_OBJECTS) $(lpc10_tests_DEPENDENCIES)
 make_g168_css$(EXEEXT): $(make_g168_css_OBJECTS) $(make_g168_css_DEPENDENCIES) 
 	@rm -f make_g168_css$(EXEEXT)
 	$(LINK) $(make_g168_css_LDFLAGS) $(make_g168_css_OBJECTS) $(make_g168_css_LDADD) $(LIBS)
+math_fixed_tests$(EXEEXT): $(math_fixed_tests_OBJECTS) $(math_fixed_tests_DEPENDENCIES) 
+	@rm -f math_fixed_tests$(EXEEXT)
+	$(LINK) $(math_fixed_tests_LDFLAGS) $(math_fixed_tests_OBJECTS) $(math_fixed_tests_LDADD) $(LIBS)
 modem_connect_tones_tests$(EXEEXT): $(modem_connect_tones_tests_OBJECTS) $(modem_connect_tones_tests_DEPENDENCIES) 
 	@rm -f modem_connect_tones_tests$(EXEEXT)
 	$(LINK) $(modem_connect_tones_tests_LDFLAGS) $(modem_connect_tones_tests_OBJECTS) $(modem_connect_tones_tests_LDADD) $(LIBS)
@@ -1010,12 +1008,6 @@ t38_terminal_to_gateway_tests$(EXEEXT): $(t38_terminal_to_gateway_tests_OBJECTS)
 t4_tests$(EXEEXT): $(t4_tests_OBJECTS) $(t4_tests_DEPENDENCIES) 
 	@rm -f t4_tests$(EXEEXT)
 	$(LINK) $(t4_tests_LDFLAGS) $(t4_tests_OBJECTS) $(t4_tests_LDADD) $(LIBS)
-testadsi$(EXEEXT): $(testadsi_OBJECTS) $(testadsi_DEPENDENCIES) 
-	@rm -f testadsi$(EXEEXT)
-	$(LINK) $(testadsi_LDFLAGS) $(testadsi_OBJECTS) $(testadsi_LDADD) $(LIBS)
-testfax$(EXEEXT): $(testfax_OBJECTS) $(testfax_DEPENDENCIES) 
-	@rm -f testfax$(EXEEXT)
-	$(LINK) $(testfax_LDFLAGS) $(testfax_OBJECTS) $(testfax_LDADD) $(LIBS)
 time_scale_tests$(EXEEXT): $(time_scale_tests_OBJECTS) $(time_scale_tests_DEPENDENCIES) 
 	@rm -f time_scale_tests$(EXEEXT)
 	$(LINK) $(time_scale_tests_LDFLAGS) $(time_scale_tests_OBJECTS) $(time_scale_tests_LDADD) $(LIBS)
@@ -1106,6 +1098,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/logging_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lpc10_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/make_g168_css.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/math_fixed_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/media_monitor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modem_connect_tones_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/modem_echo_tests.Po@am__quote@
@@ -1135,8 +1128,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t38_terminal_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t38_terminal_to_gateway_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t4_tests.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testadsi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testfax.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time_scale_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timezone_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tone_detect_tests.Po@am__quote@

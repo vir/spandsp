@@ -130,6 +130,7 @@
 <File RelativePath="lpc10_encode.c"></File>
 <File RelativePath="lpc10_placev.c"></File>
 <File RelativePath="lpc10_voicing.c"></File>
+<File RelativePath="math_fixed.c"></File>
 <File RelativePath="modem_echo.c"></File>
 <File RelativePath="modem_connect_tones.c"></File>
 <File RelativePath="noise.c"></File>
@@ -210,6 +211,7 @@
 <File RelativePath="spandsp/image_translate.h"></File>
 <File RelativePath="spandsp/logging.h"></File>
 <File RelativePath="spandsp/lpc10.h"></File>
+<File RelativePath="spandsp/math_fixed.h"></File>
 <File RelativePath="spandsp/modem_echo.h"></File>
 <File RelativePath="spandsp/modem_connect_tones.h"></File>
 <File RelativePath="spandsp/noise.h"></File>

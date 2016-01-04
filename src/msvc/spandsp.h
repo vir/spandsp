@@ -54,6 +54,7 @@
 #include <spandsp/schedule.h>
 #include <spandsp/g711.h>
 #include <spandsp/timing.h>
+#include <spandsp/math_fixed.h>
 #include <spandsp/vector_float.h>
 #include <spandsp/complex_vector_float.h>
 #include <spandsp/vector_int.h>

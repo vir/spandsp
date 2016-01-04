@@ -217,7 +217,7 @@ SPAN_DECLARE(int16_t) dds_lookup(uint32_t phase)
     phase >>= DDS_SHIFT;
     step = phase & (DDS_STEPS - 1);
     if ((phase & DDS_STEPS))
-        step = (DDS_STEPS - 1) - step;
+        step = DDS_STEPS - step;
     amp = sine_table[step];
     if ((phase & (2*DDS_STEPS)))
     	amp = -amp;
