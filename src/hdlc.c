@@ -40,6 +40,7 @@
 #endif
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/async.h"
 #include "spandsp/crc.h"
 #include "spandsp/bit_operations.h"
@@ -333,7 +334,7 @@ SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (hdlc_rx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (hdlc_rx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -369,7 +370,7 @@ SPAN_DECLARE(int) hdlc_rx_release(hdlc_rx_state_t *s)
 
 SPAN_DECLARE(int) hdlc_rx_free(hdlc_rx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -632,7 +633,7 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (hdlc_tx_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (hdlc_tx_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -664,7 +665,7 @@ SPAN_DECLARE(int) hdlc_tx_release(hdlc_tx_state_t *s)
 
 SPAN_DECLARE(int) hdlc_tx_free(hdlc_tx_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

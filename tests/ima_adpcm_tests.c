@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
     in_file_name = IN_FILE_NAME;
     chunk_size = 160;
     enc_chunk_size = 0;
-    log_encoded_data = FALSE;
+    log_encoded_data = false;
     while ((opt = getopt(argc, argv, "ac:i:lv")) != -1)
     {
         switch (opt)
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
             in_file_name = optarg;
             break;
         case 'l':
-            log_encoded_data = TRUE;
+            log_encoded_data = true;
             break;
         case 'v':
             variant = IMA_ADPCM_VDVI;

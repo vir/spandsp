@@ -43,9 +43,15 @@
 #include <memory.h>
 #include <string.h>
 #include <ctype.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include <assert.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
 #include "spandsp/power_meter.h"
@@ -77,20 +83,20 @@ static at_profile_t profiles[3] =
 {
     {
 #if defined(_MSC_VER)  ||  defined(__sunos)  ||  defined(__solaris)  ||  defined(__sun)
-        /*.echo =*/ TRUE,
-        /*.verbose =*/ TRUE,
+        /*.echo =*/ true,
+        /*.verbose =*/ true,
         /*.result_code_format =*/ ASCII_RESULT_CODES,
-        /*.pulse_dial =*/ FALSE,
-        /*.double_escape =*/ FALSE,
-        /*.adaptive_receive =*/ FALSE,
+        /*.pulse_dial =*/ false,
+        /*.double_escape =*/ false,
+        /*.adaptive_receive =*/ false,
         /*.s_regs[100] =*/ {0, 0, 0, '\r', '\n', '\b', 1, 60, 5, 0, 0}
 #else
-        .echo = TRUE,
-        .verbose = TRUE,
+        .echo = true,
+        .verbose = true,
         .result_code_format = ASCII_RESULT_CODES,
-        .pulse_dial = FALSE,
-        .double_escape = FALSE,
-        .adaptive_receive = FALSE,
+        .pulse_dial = false,
+        .double_escape = false,
+        .adaptive_receive = false,
         .s_regs[0] = 0,
         .s_regs[3] = '\r',
         .s_regs[4] = '\n',
@@ -128,6 +134,68 @@ static const char *at_response_codes[] =
     "+FRH:3"
 };
 
+SPAN_DECLARE(const char *) at_call_state_to_str(int state)
+{
+    switch (state)
+    {
+    case AT_CALL_EVENT_ALERTING:
+        return "Alerting";
+    case AT_CALL_EVENT_CONNECTED:
+        return "Connected";
+    case AT_CALL_EVENT_ANSWERED:
+        return "Answered";
+    case AT_CALL_EVENT_BUSY:
+        return "Busy";
+    case AT_CALL_EVENT_NO_DIALTONE:
+        return "No dialtone";
+    case AT_CALL_EVENT_NO_ANSWER:
+        return "No answer";
+    case AT_CALL_EVENT_HANGUP:
+        return "Hangup";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(const char *) at_modem_control_to_str(int state)
+{
+    switch (state)
+    {
+    case AT_MODEM_CONTROL_CALL:
+        return "Call";
+    case AT_MODEM_CONTROL_ANSWER:
+        return "Answer";
+    case AT_MODEM_CONTROL_HANGUP:
+        return "Hangup";
+    case AT_MODEM_CONTROL_OFFHOOK:
+        return "Off hook";
+    case AT_MODEM_CONTROL_ONHOOK:
+        return "On hook";
+    case AT_MODEM_CONTROL_DTR:
+        return "DTR";
+    case AT_MODEM_CONTROL_RTS:
+        return "RTS";
+    case AT_MODEM_CONTROL_CTS:
+        return "CTS";
+    case AT_MODEM_CONTROL_CAR:
+        return "CAR";
+    case AT_MODEM_CONTROL_RNG:
+        return "RNG";
+    case AT_MODEM_CONTROL_DSR:
+        return "DSR";
+    case AT_MODEM_CONTROL_SETID:
+        return "Set ID";
+    case AT_MODEM_CONTROL_RESTART:
+        return "Restart";
+    case AT_MODEM_CONTROL_DTE_TIMEOUT:
+        return "DTE timeout";
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 {
     /* The use of a DTE timeout is mode dependent. Set the timeout appropriately in
@@ -149,7 +217,7 @@ SPAN_DECLARE(void) at_set_at_rx_mode(at_state_t *s, int new_mode)
 SPAN_DECLARE(void) at_put_response(at_state_t *s, const char *t)
 {
     uint8_t buf[3];
-    
+
     buf[0] = s->p.s_regs[3];
     buf[1] = s->p.s_regs[4];
     buf[2] = '\0';
@@ -193,11 +261,11 @@ SPAN_DECLARE(void) at_put_response_code(at_state_t *s, int code)
 static int answer_call(at_state_t *s)
 {
     if (at_modem_control(s, AT_MODEM_CONTROL_ANSWER, NULL) < 0)
-        return FALSE;
+        return false;
     /* Answering should now be in progress. No AT response should be
        issued at this point. */
-    s->do_hangup = FALSE;
-    return TRUE;
+    s->do_hangup = false;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -256,7 +324,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
                     at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_NOCNG_TONE);
                 else
                     at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_CNG_TONE);
-                s->dte_is_waiting = TRUE;
+                s->dte_is_waiting = true;
             }
         }
         break;
@@ -280,13 +348,13 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
             if (s->ok_is_pending)
             {
                 at_put_response_code(s, AT_RESPONSE_CODE_OK);
-                s->ok_is_pending = FALSE;
+                s->ok_is_pending = false;
             }
             else
             {
                 at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
             }
-            s->dte_is_waiting = FALSE;
+            s->dte_is_waiting = false;
             at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
         }
         else if (s->fclass_mode  &&  s->rx_signal_present)
@@ -298,7 +366,7 @@ SPAN_DECLARE(void) at_call_event(at_state_t *s, int event)
         }
         if (s->at_rx_mode != AT_MODE_OFFHOOK_COMMAND  &&  s->at_rx_mode != AT_MODE_ONHOOK_COMMAND)
             at_put_response_code(s, AT_RESPONSE_CODE_NO_CARRIER);
-        s->rx_signal_present = FALSE;
+        s->rx_signal_present = false;
         at_modem_control(s, AT_MODEM_CONTROL_RNG, (void *) 0);
         at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
         break;
@@ -313,15 +381,15 @@ SPAN_DECLARE(void) at_reset_call_info(at_state_t *s)
 {
     at_call_id_t *call_id;
     at_call_id_t *next;
- 
+
     for (call_id = s->call_id;  call_id;  call_id = next)
     {
         next = call_id->next;
-        free(call_id);
+        span_free(call_id);
     }
     s->call_id = NULL;
     s->rings_indicated = 0;
-    s->call_info_displayed = FALSE;
+    s->call_info_displayed = false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -330,8 +398,8 @@ SPAN_DECLARE(void) at_set_call_info(at_state_t *s, char const *id, char const *v
     at_call_id_t *new_call_id;
     at_call_id_t *call_id;
 
-    /* TODO: We should really not merely ignore a failure to malloc */
-    if ((new_call_id = (at_call_id_t *) malloc(sizeof(*new_call_id))) == NULL)
+    /* TODO: We should really not merely ignore a failure to allocate */
+    if ((new_call_id = (at_call_id_t *) span_alloc(sizeof(*new_call_id))) == NULL)
         return;
     call_id = s->call_id;
     /* If these strdups fail its pretty harmless. We just appear to not
@@ -362,20 +430,20 @@ SPAN_DECLARE(void) at_display_call_info(at_state_t *s)
     {
         snprintf(buf,
                  sizeof(buf),
-                 "%s=%s", 
+                 "%s=%s",
                  (call_id->id)  ?  call_id->id  :  "NULL",
                  (call_id->value)  ?  call_id->value  :  "<NONE>");
         at_put_response(s, buf);
         call_id = call_id->next;
     }
-    s->call_info_displayed = TRUE;
+    s->call_info_displayed = true;
 }
 /*- End of function --------------------------------------------------------*/
 
 static int parse_num(const char **s, int max_value)
 {
     int i;
-    
+
     /* The spec. says no digits is valid, and should be treated as zero. */
     i = 0;
     while (isdigit((int) **s))
@@ -392,7 +460,7 @@ static int parse_num(const char **s, int max_value)
 static int parse_hex_num(const char **s, int max_value)
 {
     int i;
-    
+
     /* The spec. says a hex value is always 2 digits, and the alpha digits are
        upper case. */
     i = 0;
@@ -434,13 +502,13 @@ static int match_element(const char **variant, const char *variants)
         if (len == (int) strlen(*variant)  &&  memcmp(*variant, s, len) == 0)
         {
             *variant += len;
-            return  i;
+            return i;
         }
         s += len;
         if (*s == ',')
             s++;
     }
-    return  -1;
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -463,7 +531,7 @@ static int parse_out(at_state_t *s, const char **t, int *target, int max_value, 
         default:
             /* Set value */
             if ((val = parse_num(t, max_value)) < 0)
-                return FALSE;
+                return false;
             if (target)
                 *target = val;
             break;
@@ -476,9 +544,9 @@ static int parse_out(at_state_t *s, const char **t, int *target, int max_value, 
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -502,14 +570,14 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
         default:
             /* Set value */
             if ((val1 = parse_num(t, max_value1)) < 0)
-                return FALSE;
+                return false;
             if (target1)
                 *target1 = val1;
             if (**t == ',')
             {
                 (*t)++;
                 if ((val2 = parse_num(t, max_value2)) < 0)
-                    return FALSE;
+                    return false;
                 if (target2)
                     *target2 = val2;
             }
@@ -524,9 +592,9 @@ static int parse_2_out(at_state_t *s, const char **t, int *target1, int max_valu
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -559,7 +627,7 @@ static int parse_n_out(at_state_t *s,
             for (i = 0;  i < entries;  i++)
             {
                 if ((val = parse_num(t, max_values[i])) < 0)
-                    return FALSE;
+                    return false;
                 if (targets[i])
                     *targets[i] = val;
                 if (**t != ',')
@@ -582,9 +650,9 @@ static int parse_n_out(at_state_t *s,
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -607,7 +675,7 @@ static int parse_hex_out(at_state_t *s, const char **t, int *target, int max_val
         default:
             /* Set value */
             if ((val = parse_hex_num(t, max_value)) < 0)
-                return FALSE;
+                return false;
             if (target)
                 *target = val;
             break;
@@ -620,9 +688,9 @@ static int parse_hex_out(at_state_t *s, const char **t, int *target, int max_val
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -647,7 +715,7 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
         default:
             /* Set value */
             if ((val = match_element(t, def)) < 0)
-                return FALSE;
+                return false;
             if (target)
                 *target = val;
             break;
@@ -666,9 +734,9 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
         at_put_response(s, buf);
         break;
     default:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -690,7 +758,7 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
         default:
             /* Set value */
             if (*target)
-                free(*target);
+                span_free(*target);
             /* If this strdup fails, it should be harmless */
             *target = strdup(*t);
             break;
@@ -701,11 +769,11 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
         at_put_response(s, (*target)  ?  *target  :  "");
         break;
     default:
-        return FALSE;
+        return false;
     }
     while (*t)
         t++;
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -797,21 +865,21 @@ static int process_class1_cmd(at_state_t *s, const char **t)
         allowed = "24,48,72,73,74,96,97,98,121,122,145,146";
         break;
     }
-    
+
     val = -1;
     if (!parse_out(s, t, &val, 255, NULL, allowed))
-        return TRUE;
+        return true;
     if (val < 0)
     {
         /* It was just a query */
-        return  TRUE;
+        return true;
     }
     /* All class 1 FAX commands are supposed to give an ERROR response, if the phone
        is on-hook. */
     if (s->at_rx_mode == AT_MODE_ONHOOK_COMMAND)
-        return FALSE;
+        return false;
 
-    result = TRUE;
+    result = true;
     if (s->class1_handler)
         result = s->class1_handler(s, s->class1_user_data, direction, operation, val);
     switch (result)
@@ -819,11 +887,11 @@ static int process_class1_cmd(at_state_t *s, const char **t)
     case 0:
         /* Inhibit an immediate response.  (These commands should not be part of a multi-command entry.) */
         *t = (const char *) -1;
-        return TRUE;
+        return true;
     case -1:
-        return FALSE;
+        return false;
     }
-    return TRUE;
+    return true;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -836,7 +904,7 @@ static const char *at_cmd_dummy(at_state_t *s, const char *t)
 
 static const char *at_cmd_A(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.5 - Answer (abortable) */ 
+    /* V.250 6.3.5 - Answer (abortable) */
     t += 1;
     if (!answer_call(s))
         return NULL;
@@ -851,13 +919,13 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
     char num[100 + 1];
     char ch;
 
-    /* V.250 6.3.1 - Dial (abortable) */ 
+    /* V.250 6.3.1 - Dial (abortable) */
     at_reset_call_info(s);
-    s->do_hangup = FALSE;
-    s->silent_dial = FALSE;
-    s->command_dial = FALSE;
+    s->do_hangup = false;
+    s->silent_dial = false;
+    s->command_dial = false;
     t += 1;
-    ok = FALSE;
+    ok = false;
     /* There are a numbers of options in a dial command string.
        Many are completely irrelevant in this application. */
     u = num;
@@ -899,11 +967,11 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case 'T':
                 /* V.250 6.3.1.3 Tone dial */
-                s->p.pulse_dial = FALSE;
+                s->p.pulse_dial = false;
                 break;
             case 'P':
                 /* V.250 6.3.1.4 Pulse dial */
-                s->p.pulse_dial = TRUE;
+                s->p.pulse_dial = true;
                 break;
             case '!':
                 /* V.250 6.3.1.5 Hook flash, register recall */
@@ -915,7 +983,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case '@':
                 /* V.250 6.3.1.7 Wait for quiet answer */
-                s->silent_dial = TRUE;
+                s->silent_dial = true;
                 break;
             case 'S':
                 /* V.250 6.3.1.8 Invoke stored string */
@@ -936,7 +1004,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
                 break;
             case ';':
                 /* V.250 6.3.1 - Dial string terminator - make voice call and remain in command mode */
-                s->command_dial = TRUE;
+                s->command_dial = true;
                 break;
             case '>':
                 /* GSM07.07 6.2 - Direct dialling from phone book supplementary service subscription
@@ -961,7 +1029,7 @@ static const char *at_cmd_E(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.2.4 - Command echo */ 
+    /* V.250 6.2.4 - Command echo */
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
@@ -974,7 +1042,7 @@ static const char *at_cmd_H(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.3.6 - Hook control */ 
+    /* V.250 6.3.6 - Hook control */
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
@@ -992,7 +1060,7 @@ static const char *at_cmd_H(at_state_t *s, const char *t)
     {
         /* Push out the last of the audio (probably by sending a short silence). */
         at_modem_control(s, AT_MODEM_CONTROL_RESTART, (void *) FAX_MODEM_FLUSH);
-        s->do_hangup = TRUE;
+        s->do_hangup = true;
         at_set_at_rx_mode(s, AT_MODE_CONNECTED);
         return (const char *) -1;
     }
@@ -1006,7 +1074,7 @@ static const char *at_cmd_I(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.1.3 - Request identification information */ 
+    /* V.250 6.1.3 - Request identification information */
     /* N.B. The information supplied in response to an ATIx command is very
        variable. It was widely used in different ways before the AT command
        set was standardised by the ITU. */
@@ -1044,7 +1112,7 @@ static const char *at_cmd_M(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.3.14 - Monitor speaker mode */ 
+    /* V.250 6.3.14 - Monitor speaker mode */
     /* Just absorb this command, as we have no speaker */
     t += 1;
     if ((val = parse_num(&t, 255)) < 0)
@@ -1058,7 +1126,7 @@ static const char *at_cmd_O(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.3.7 - Return to online data state */ 
+    /* V.250 6.3.7 - Return to online data state */
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
@@ -1073,9 +1141,9 @@ static const char *at_cmd_O(at_state_t *s, const char *t)
 
 static const char *at_cmd_P(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.3 - Select pulse dialling (command) */ 
+    /* V.250 6.3.3 - Select pulse dialling (command) */
     t += 1;
-    s->p.pulse_dial = TRUE;
+    s->p.pulse_dial = true;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1084,7 +1152,7 @@ static const char *at_cmd_Q(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.2.5 - Result code suppression */ 
+    /* V.250 6.2.5 - Result code suppression */
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
@@ -1103,7 +1171,7 @@ static const char *at_cmd_Q(at_state_t *s, const char *t)
 
 static const char *at_cmd_S0(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.8 - Automatic answer */ 
+    /* V.250 6.3.8 - Automatic answer */
     t += 2;
     return s_reg_handler(s, t, 0);
 }
@@ -1111,7 +1179,7 @@ static const char *at_cmd_S0(at_state_t *s, const char *t)
 
 static const char *at_cmd_S10(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.12 - Automatic disconnect delay */ 
+    /* V.250 6.3.12 - Automatic disconnect delay */
     t += 3;
     return s_reg_handler(s, t, 10);
 }
@@ -1119,7 +1187,7 @@ static const char *at_cmd_S10(at_state_t *s, const char *t)
 
 static const char *at_cmd_S3(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.1 - Command line termination character */ 
+    /* V.250 6.2.1 - Command line termination character */
     t += 2;
     return s_reg_handler(s, t, 3);
 }
@@ -1127,7 +1195,7 @@ static const char *at_cmd_S3(at_state_t *s, const char *t)
 
 static const char *at_cmd_S4(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.2 - Response formatting character */ 
+    /* V.250 6.2.2 - Response formatting character */
     t += 2;
     return s_reg_handler(s, t, 4);
 }
@@ -1135,7 +1203,7 @@ static const char *at_cmd_S4(at_state_t *s, const char *t)
 
 static const char *at_cmd_S5(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.3 - Command line editing character */ 
+    /* V.250 6.2.3 - Command line editing character */
     t += 2;
     return s_reg_handler(s, t, 5);
 }
@@ -1143,7 +1211,7 @@ static const char *at_cmd_S5(at_state_t *s, const char *t)
 
 static const char *at_cmd_S6(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.9 - Pause before blind dialling */ 
+    /* V.250 6.3.9 - Pause before blind dialling */
     t += 2;
     return s_reg_handler(s, t, 6);
 }
@@ -1151,7 +1219,7 @@ static const char *at_cmd_S6(at_state_t *s, const char *t)
 
 static const char *at_cmd_S7(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.10 - Connection completion timeout */ 
+    /* V.250 6.3.10 - Connection completion timeout */
     t += 2;
     return s_reg_handler(s, t, 7);
 }
@@ -1159,7 +1227,7 @@ static const char *at_cmd_S7(at_state_t *s, const char *t)
 
 static const char *at_cmd_S8(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.11 - Comma dial modifier time */ 
+    /* V.250 6.3.11 - Comma dial modifier time */
     t += 2;
     return s_reg_handler(s, t, 8);
 }
@@ -1167,9 +1235,9 @@ static const char *at_cmd_S8(at_state_t *s, const char *t)
 
 static const char *at_cmd_T(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.2 - Select tone dialling (command) */ 
+    /* V.250 6.3.2 - Select tone dialling (command) */
     t += 1;
-    s->p.pulse_dial = FALSE;
+    s->p.pulse_dial = false;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1178,7 +1246,7 @@ static const char *at_cmd_V(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.2.6 - DCE response format */ 
+    /* V.250 6.2.6 - DCE response format */
     t += 1;
     if ((val = parse_num(&t, 1)) < 0)
         return NULL;
@@ -1216,7 +1284,7 @@ static const char *at_cmd_Z(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.1.1 - Reset to default configuration */ 
+    /* V.250 6.1.1 - Reset to default configuration */
     t += 1;
     if ((val = parse_num(&t, sizeof(profiles)/sizeof(profiles[0]) - 1)) < 0)
         return NULL;
@@ -1233,7 +1301,7 @@ static const char *at_cmd_amp_C(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.2.8 - Circuit 109 (received line signal detector) behaviour */ 
+    /* V.250 6.2.8 - Circuit 109 (received line signal detector) behaviour */
     /* We have no RLSD pin, so just absorb this. */
     t += 2;
     if ((val = parse_num(&t, 1)) < 0)
@@ -1247,7 +1315,7 @@ static const char *at_cmd_amp_D(at_state_t *s, const char *t)
 {
     int val;
 
-    /* V.250 6.2.9 - Circuit 108 (data terminal ready) behaviour */ 
+    /* V.250 6.2.9 - Circuit 108 (data terminal ready) behaviour */
     t += 2;
     if ((val = parse_num(&t, 2)) < 0)
         return NULL;
@@ -1262,7 +1330,7 @@ static const char *at_cmd_amp_F(at_state_t *s, const char *t)
 {
     t += 2;
 
-    /* V.250 6.1.2 - Set to factory-defined configuration */ 
+    /* V.250 6.1.2 - Set to factory-defined configuration */
     /* Just make sure we are on hook */
     at_modem_control(s, AT_MODEM_CONTROL_HANGUP, NULL);
     at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
@@ -1412,7 +1480,7 @@ static const char *at_cmd_plus_A8T(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ASTO(at_state_t *s, const char *t)
 {
-    /* V.250 6.3.15 - Store telephone number */ 
+    /* V.250 6.3.15 - Store telephone number */
     /* TODO: */
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+ASTO:", ""))
@@ -3188,7 +3256,7 @@ static const char *at_cmd_plus_CXT(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_DR(at_state_t *s, const char *t)
 {
-    /* V.250 6.6.2 - Data compression reporting */ 
+    /* V.250 6.6.2 - Data compression reporting */
     /* TODO: */
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+DR:", ""))
@@ -3199,7 +3267,7 @@ static const char *at_cmd_plus_DR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_DS(at_state_t *s, const char *t)
 {
-    /* V.250 6.6.1 - Data compression */ 
+    /* V.250 6.6.1 - Data compression */
     /* TODO: */
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+DS:", ""))
@@ -3219,7 +3287,7 @@ static const char *at_cmd_plus_DS44(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_EB(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.2 - Break handling in error control operation */ 
+    /* V.250 6.5.2 - Break handling in error control operation */
     /* TODO: */
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+EB:", ""))
@@ -3230,7 +3298,7 @@ static const char *at_cmd_plus_EB(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_EFCS(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.4 - 32-bit frame check sequence */ 
+    /* V.250 6.5.4 - 32-bit frame check sequence */
     /* TODO: */
     t += 5;
     if (!parse_out(s, &t, NULL, 2, "+EFCS:", "(0-2)"))
@@ -3241,7 +3309,7 @@ static const char *at_cmd_plus_EFCS(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_EFRAM(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.8 - Frame length */ 
+    /* V.250 6.5.8 - Frame length */
     /* TODO: */
     t += 6;
     if (!parse_2_out(s, &t, NULL, 65535, NULL, 65535, "+EFRAM:", "(1-65535),(1-65535)"))
@@ -3252,7 +3320,7 @@ static const char *at_cmd_plus_EFRAM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ER(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.5 - Error control reporting */ 
+    /* V.250 6.5.5 - Error control reporting */
     /*  0   Error control reporting disabled (no +ER intermediate result code transmitted)
         1   Error control reporting enabled (+ER intermediate result code transmitted) */
     /* TODO: */
@@ -3271,7 +3339,7 @@ static const char *at_cmd_plus_ES(at_state_t *s, const char *t)
     };
     int *locations[3];
 
-    /* V.250 6.5.1 - Error control selection */ 
+    /* V.250 6.5.1 - Error control selection */
 
     /* orig_rqst
         0:  Direct mode
@@ -3341,7 +3409,7 @@ static const char *at_cmd_plus_ESA(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ESR(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.3 - Selective repeat */ 
+    /* V.250 6.5.3 - Selective repeat */
     /* TODO: */
     t += 4;
     return t;
@@ -3350,7 +3418,7 @@ static const char *at_cmd_plus_ESR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ETBM(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.6 - Call termination buffer management */ 
+    /* V.250 6.5.6 - Call termination buffer management */
     /* TODO: */
     t += 5;
     if (!parse_2_out(s, &t, NULL, 2, NULL, 2, "+ETBM:", "(0-2),(0-2),(0-30)"))
@@ -3361,7 +3429,7 @@ static const char *at_cmd_plus_ETBM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_EWIND(at_state_t *s, const char *t)
 {
-    /* V.250 6.5.7 - Window size */ 
+    /* V.250 6.5.7 - Window size */
     /* TODO: */
     t += 6;
     if (!parse_2_out(s, &t, &s->rx_window, 127, &s->tx_window, 127, "+EWIND:", "(1-127),(1-127)"))
@@ -3411,7 +3479,7 @@ static const char *at_cmd_plus_FAP(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FAR(at_state_t *s, const char *t)
 {
-    /* T.31 8.5.1 - Adaptive reception control */ 
+    /* T.31 8.5.1 - Adaptive reception control */
     t += 4;
     if (!parse_out(s, &t, &s->p.adaptive_receive, 1, NULL, "0,1"))
          return NULL;
@@ -3457,7 +3525,7 @@ static const char *at_cmd_plus_FCC(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FCL(at_state_t *s, const char *t)
 {
-    /* T.31 8.5.2 - Carrier loss timeout */ 
+    /* T.31 8.5.2 - Carrier loss timeout */
     t += 4;
     if (!parse_out(s, &t, &s->carrier_loss_timeout, 255, NULL, "(0-255)"))
          return NULL;
@@ -3467,7 +3535,7 @@ static const char *at_cmd_plus_FCL(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FCLASS(at_state_t *s, const char *t)
 {
-    /* T.31 8.2 - Capabilities identification and control */ 
+    /* T.31 8.2 - Capabilities identification and control */
     t += 7;
     /* T.31 says the reply string should be "0,1.0", however making
        it "0,1,1.0" makes things compatible with a lot more software
@@ -3516,7 +3584,7 @@ static const char *at_cmd_plus_FCT(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FDD(at_state_t *s, const char *t)
 {
-    /* T.31 8.5.3 - Double escape character replacement */ 
+    /* T.31 8.5.3 - Double escape character replacement */
     t += 4;
     if (!parse_out(s, &t, &s->p.double_escape, 1, NULL, "(0,1)"))
         return NULL;
@@ -3606,7 +3674,7 @@ static const char *at_cmd_plus_FIS(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FIT(at_state_t *s, const char *t)
 {
-    /* T.31 8.5.4 - DTE inactivity timeout */ 
+    /* T.31 8.5.4 - DTE inactivity timeout */
     t += 4;
     if (!parse_2_out(s, &t, &s->dte_inactivity_timeout, 255, &s->dte_inactivity_action, 1, "+FIT:", "(0-255),(0-1)"))
         return NULL;
@@ -3634,9 +3702,11 @@ static const char *at_cmd_plus_FLI(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FLO(at_state_t *s, const char *t)
 {
-    /* T.31 Annex A */ 
-    /* Implement something similar to the V.250 +IFC command */ 
-    /* TODO: */
+    /* T.31 Annex A */
+    /* Implement something similar to the V.250 +IFC command */
+    /*  0:  None.
+        1:  XON/XOFF.
+        2:  Hardware (default) */
     t += 4;
     return t;
 }
@@ -3653,7 +3723,7 @@ static const char *at_cmd_plus_FLP(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FMI(at_state_t *s, const char *t)
 {
-    /* T.31 says to duplicate +GMI */ 
+    /* T.31 says to duplicate +GMI */
     t += 4;
     if (t[0] == '?')
     {
@@ -3666,7 +3736,7 @@ static const char *at_cmd_plus_FMI(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FMM(at_state_t *s, const char *t)
 {
-    /* T.31 says to duplicate +GMM */ 
+    /* T.31 says to duplicate +GMM */
     t += 4;
     if (t[0] == '?')
     {
@@ -3679,7 +3749,7 @@ static const char *at_cmd_plus_FMM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FMR(at_state_t *s, const char *t)
 {
-    /* T.31 says to duplicate +GMR */ 
+    /* T.31 says to duplicate +GMR */
     t += 4;
     if (t[0] == '?')
     {
@@ -3748,8 +3818,8 @@ static const char *at_cmd_plus_FPP(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FPR(at_state_t *s, const char *t)
 {
-    /* T.31 Annex A */ 
-    /* Implement something similar to the V.250 +IPR command */ 
+    /* T.31 Annex A */
+    /* Implement something similar to the V.250 +IPR command */
     t += 4;
     if (!parse_out(s, &t, &s->dte_rate, 115200, NULL, "115200"))
         return NULL;
@@ -3775,7 +3845,7 @@ static const char *at_cmd_plus_FPW(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FRH(at_state_t *s, const char *t)
 {
-    /* T.31 8.3.6 - HDLC receive */ 
+    /* T.31 8.3.6 - HDLC receive */
     if (!process_class1_cmd(s, &t))
         return NULL;
     return t;
@@ -3784,7 +3854,7 @@ static const char *at_cmd_plus_FRH(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FRM(at_state_t *s, const char *t)
 {
-    /* T.31 8.3.4 - Facsimile receive */ 
+    /* T.31 8.3.4 - Facsimile receive */
     if (!process_class1_cmd(s, &t))
         return NULL;
     return t;
@@ -3802,7 +3872,7 @@ static const char *at_cmd_plus_FRQ(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FRS(at_state_t *s, const char *t)
 {
-    /* T.31 8.3.2 - Receive silence */ 
+    /* T.31 8.3.2 - Receive silence */
     if (!process_class1_cmd(s, &t))
         return NULL;
     return t;
@@ -3838,7 +3908,7 @@ static const char *at_cmd_plus_FSP(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FTH(at_state_t *s, const char *t)
 {
-    /* T.31 8.3.5 - HDLC transmit */ 
+    /* T.31 8.3.5 - HDLC transmit */
     if (!process_class1_cmd(s, &t))
         return NULL;
     return t;
@@ -3847,7 +3917,7 @@ static const char *at_cmd_plus_FTH(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FTM(at_state_t *s, const char *t)
 {
-    /* T.31 8.3.3 - Facsimile transmit */ 
+    /* T.31 8.3.3 - Facsimile transmit */
     if (!process_class1_cmd(s, &t))
         return NULL;
     return t;
@@ -3856,7 +3926,7 @@ static const char *at_cmd_plus_FTM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_FTS(at_state_t *s, const char *t)
 {
-    /* T.31 8.3.1 - Transmit silence */ 
+    /* T.31 8.3.1 - Transmit silence */
     if (!process_class1_cmd(s, &t))
         return NULL;
     return t;
@@ -3885,7 +3955,7 @@ static const char *at_cmd_plus_GCAP(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_GCI(at_state_t *s, const char *t)
 {
-    /* V.250 6.1.10 - Country of installation, */ 
+    /* V.250 6.1.10 - Country of installation, */
     t += 4;
     if (!parse_hex_out(s, &t, &s->country_of_installation, 255, "+GCI:", "(00-FF)"))
         return NULL;
@@ -3895,7 +3965,7 @@ static const char *at_cmd_plus_GCI(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_GMI(at_state_t *s, const char *t)
 {
-    /* V.250 6.1.4 - Request manufacturer identification */ 
+    /* V.250 6.1.4 - Request manufacturer identification */
     t += 4;
     if (t[0] == '?')
     {
@@ -3908,7 +3978,7 @@ static const char *at_cmd_plus_GMI(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_GMM(at_state_t *s, const char *t)
 {
-    /* V.250 6.1.5 - Request model identification */ 
+    /* V.250 6.1.5 - Request model identification */
     t += 4;
     if (t[0] == '?')
     {
@@ -3921,7 +3991,7 @@ static const char *at_cmd_plus_GMM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_GMR(at_state_t *s, const char *t)
 {
-    /* V.250 6.1.6 - Request revision identification */ 
+    /* V.250 6.1.6 - Request revision identification */
     t += 4;
     if (t[0] == '?')
     {
@@ -3934,7 +4004,7 @@ static const char *at_cmd_plus_GMR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_GOI(at_state_t *s, const char *t)
 {
-    /* V.250 6.1.8 - Request global object identification */ 
+    /* V.250 6.1.8 - Request global object identification */
     /* TODO: */
     t += 4;
     if (t[0] == '?')
@@ -3948,7 +4018,7 @@ static const char *at_cmd_plus_GOI(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_GSN(at_state_t *s, const char *t)
 {
-    /* V.250 6.1.7 - Request product serial number identification */ 
+    /* V.250 6.1.7 - Request product serial number identification */
     /* TODO: */
     t += 4;
     if (t[0] == '?')
@@ -3975,11 +4045,11 @@ static const char *at_cmd_plus_IBC(at_state_t *s, const char *t)
     /* 0: In-band control service disabled
        1: In-band control service enabled, 7-bit codes allowed, and top bit insignificant
        2; In-band control service enabled, 7-bit codes allowed, and 8-bit codes available
-    
+
        Circuits 105, 106, 107, 108, 109, 110, 125, 132, 133, 135, 142 in that order. For each one:
        0: disabled
        1: enabled
-       
+
        DCE line connect status reports:
        0: disabled
        1: enabled */
@@ -4013,9 +4083,9 @@ static const char *at_cmd_plus_IBM(at_state_t *s, const char *t)
            T3 = entire interval -- N*T2
         7: report the first time when <T1> is exceeded, and then each time <T2> is exceeded, and then once
            more when the mark idle period ends; T3 = entire mark idle period -- N*T2 - T1
-           
+
        T1 in units of 10ms
-        
+
        T2 in units of 10ms */
     locations[0] = NULL;
     locations[1] = NULL;
@@ -4028,7 +4098,7 @@ static const char *at_cmd_plus_IBM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ICF(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.11 - DTE-DCE character framing */ 
+    /* V.250 6.2.11 - DTE-DCE character framing */
     t += 4;
     /* Character format
         0:  auto detect
@@ -4038,7 +4108,7 @@ static const char *at_cmd_plus_ICF(at_state_t *s, const char *t)
         4:  7 data 2 stop
         5:  7 data 1 parity 1 stop
         6:  7 data 1 stop
-    
+
        Parity
         0:  Odd
         1:  Even
@@ -4052,7 +4122,7 @@ static const char *at_cmd_plus_ICF(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ICLOK(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.14 - Select sync transmit clock source */ 
+    /* V.250 6.2.14 - Select sync transmit clock source */
     t += 6;
     if (!parse_out(s, &t, &s->sync_tx_clock_source, 2, "+ICLOK:", "(0-2)"))
         return NULL;
@@ -4062,7 +4132,7 @@ static const char *at_cmd_plus_ICLOK(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_IDSR(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.16 - Select data set ready option */ 
+    /* V.250 6.2.16 - Select data set ready option */
     t += 5;
     if (!parse_out(s, &t, &s->dsr_option, 2, "+IDSR:", "(0-2)"))
         return NULL;
@@ -4072,16 +4142,20 @@ static const char *at_cmd_plus_IDSR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_IFC(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.12 - DTE-DCE local flow control */ 
-    /* TODO: */
+    /* V.250 6.2.12 - DTE-DCE local flow control */
+    /*  0:  None.
+        1:  XON/XOFF.
+        2:  Hardware (default) */
     t += 4;
+    //if (!parse_2_out(s, &t, &s->dte_dce_flow_control, 2, &s->dce_dte_flow_control, 2, "+IFC:", "(0-2),(0-2)"))
+    //    return NULL;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
 
 static const char *at_cmd_plus_ILRR(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.13 - DTE-DCE local rate reporting */ 
+    /* V.250 6.2.13 - DTE-DCE local rate reporting */
     /* TODO: */
     t += 5;
     return t;
@@ -4090,7 +4164,7 @@ static const char *at_cmd_plus_ILRR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_ILSD(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.15 - Select long space disconnect option */ 
+    /* V.250 6.2.15 - Select long space disconnect option */
     t += 5;
     if (!parse_out(s, &t, &s->long_space_disconnect_option, 2, "+ILSD:", "(0,1)"))
         return NULL;
@@ -4100,7 +4174,7 @@ static const char *at_cmd_plus_ILSD(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_IPR(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.10 - Fixed DTE rate */ 
+    /* V.250 6.2.10 - Fixed DTE rate */
     /* TODO: */
     t += 4;
     if (!parse_out(s, &t, &s->dte_rate, 115200, "+IPR:", "(115200),(115200)"))
@@ -4111,7 +4185,7 @@ static const char *at_cmd_plus_IPR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_IRTS(at_state_t *s, const char *t)
 {
-    /* V.250 6.2.17 - Select synchronous mode RTS option */ 
+    /* V.250 6.2.17 - Select synchronous mode RTS option */
     t += 5;
     if (!parse_out(s, &t, NULL, 1, "+IRTS:", "(0,1)"))
         return NULL;
@@ -4130,7 +4204,7 @@ static const char *at_cmd_plus_ITF(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MA(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.2 - Modulation automode control */ 
+    /* V.250 6.4.2 - Modulation automode control */
     /* TODO: */
     t += 3;
     return t;
@@ -4139,9 +4213,9 @@ static const char *at_cmd_plus_MA(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MR(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.3 - Modulation reporting control */ 
-    /*  0    Disables reporting of modulation connection (+MCR: and +MRR: are not transmitted)
-        1    Enables reporting of modulation connection (+MCR: and +MRR: are transmitted) */
+    /* V.250 6.4.3 - Modulation reporting control */
+    /*  0:  Disables reporting of modulation connection (+MCR: and +MRR: are not transmitted)
+        1:  Enables reporting of modulation connection (+MCR: and +MRR: are transmitted) */
     /* TODO: */
     t += 3;
     if (!parse_out(s, &t, NULL, 1, "+MR:", "(0,1)"))
@@ -4152,7 +4226,7 @@ static const char *at_cmd_plus_MR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MS(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.1 - Modulation selection */ 
+    /* V.250 6.4.1 - Modulation selection */
     /* TODO: */
     t += 3;
     return t;
@@ -4161,8 +4235,8 @@ static const char *at_cmd_plus_MS(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MSC(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.8 - Seamless rate change enable */ 
-    /*  0   Disables V.34 seamless rate change 
+    /* V.250 6.4.8 - Seamless rate change enable */
+    /*  0   Disables V.34 seamless rate change
         1   Enables V.34 seamless rate change */
     /* TODO: */
     t += 4;
@@ -4174,7 +4248,7 @@ static const char *at_cmd_plus_MSC(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MV18AM(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.6 - V.18 answering message editing */ 
+    /* V.250 6.4.6 - V.18 answering message editing */
     /* TODO: */
     t += 7;
     return t;
@@ -4183,7 +4257,7 @@ static const char *at_cmd_plus_MV18AM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MV18P(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.7 - Order of probes */ 
+    /* V.250 6.4.7 - Order of probes */
     /*  2    Send probe message in 5-bit (Baudot) mode
         3    Send probe message in DTMF mode
         4    Send probe message in EDT mode
@@ -4200,7 +4274,7 @@ static const char *at_cmd_plus_MV18P(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MV18R(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.5 - V.18 reporting control */ 
+    /* V.250 6.4.5 - V.18 reporting control */
     /* TODO: */
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+MV18R:", "(0,1)"))
@@ -4211,7 +4285,7 @@ static const char *at_cmd_plus_MV18R(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_MV18S(at_state_t *s, const char *t)
 {
-    /* V.250 6.4.4 - V.18 selection */ 
+    /* V.250 6.4.4 - V.18 selection */
     /*  mode:
         0    Disables V.18 operation
         1    V.18 operation, auto detect mode
@@ -4474,7 +4548,7 @@ static const char *at_cmd_plus_SVT(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TADR(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.9 - Local V.54 address */ 
+    /* V.250 6.7.2.9 - Local V.54 address */
     /* TODO: */
     t += 5;
     return t;
@@ -4483,7 +4557,7 @@ static const char *at_cmd_plus_TADR(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TAL(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.15 - Local analogue loop */ 
+    /* V.250 6.7.2.15 - Local analogue loop */
     /* Action
         0   Disable analogue loop
         1   Enable analogue loop
@@ -4500,7 +4574,7 @@ static const char *at_cmd_plus_TAL(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TALS(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.6 - Analogue loop status */ 
+    /* V.250 6.7.2.6 - Analogue loop status */
     /*  0   Inactive
         1   V.24 circuit 141 invoked
         2   Front panel invoked
@@ -4515,7 +4589,7 @@ static const char *at_cmd_plus_TALS(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TDLS(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.7 - Local digital loop status */ 
+    /* V.250 6.7.2.7 - Local digital loop status */
     /*  0   Disabled
         1   Enabled, inactive
         2   Front panel invoked
@@ -4531,7 +4605,7 @@ static const char *at_cmd_plus_TDLS(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TE140(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.1 - Enable ckt 140 */ 
+    /* V.250 6.7.2.1 - Enable ckt 140 */
     /*  0   Disabled
         1   Enabled */
     /* TODO: */
@@ -4544,7 +4618,7 @@ static const char *at_cmd_plus_TE140(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TE141(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.2 - Enable ckt 141 */ 
+    /* V.250 6.7.2.2 - Enable ckt 141 */
     /*  0   Response is disabled
         1   Response is enabled */
     /* TODO: */
@@ -4557,7 +4631,7 @@ static const char *at_cmd_plus_TE141(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TEPAL(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.5 - Enable front panel analogue loop */ 
+    /* V.250 6.7.2.5 - Enable front panel analogue loop */
     /*  0   Disabled
         1   Enabled */
     /* TODO: */
@@ -4570,7 +4644,7 @@ static const char *at_cmd_plus_TEPAL(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TEPDL(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.4 - Enable front panel RDL */ 
+    /* V.250 6.7.2.4 - Enable front panel RDL */
     /*  0   Disabled
         1   Enabled */
     /* TODO: */
@@ -4583,7 +4657,7 @@ static const char *at_cmd_plus_TEPDL(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TERDL(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.3 - Enable RDL from remote */ 
+    /* V.250 6.7.2.3 - Enable RDL from remote */
     /*  0   Local DCE will ignore command from remote
         1   Local DCE will obey command from remote */
     /* TODO: */
@@ -4618,7 +4692,7 @@ static const char *at_cmd_plus_TMO(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TMODE(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.10 - Set V.54 mode */ 
+    /* V.250 6.7.2.10 - Set V.54 mode */
     /* TODO: */
     t += 6;
     if (!parse_out(s, &t, NULL, 1, "+TMODE:", "(0,1)"))
@@ -4629,7 +4703,7 @@ static const char *at_cmd_plus_TMODE(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TNUM(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.12 - Errored bit and block counts */ 
+    /* V.250 6.7.2.12 - Errored bit and block counts */
     /* TODO: */
     t += 5;
     return t;
@@ -4638,7 +4712,7 @@ static const char *at_cmd_plus_TNUM(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TRDL(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.14 - Request remote digital loop */ 
+    /* V.250 6.7.2.14 - Request remote digital loop */
     /*  0   Stop RDL
         1   Start RDL */
     /* TODO: */
@@ -4651,7 +4725,7 @@ static const char *at_cmd_plus_TRDL(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TRDLS(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.8 - Remote digital loop status */ 
+    /* V.250 6.7.2.8 - Remote digital loop status */
     /* TODO: */
     t += 6;
     return t;
@@ -4660,7 +4734,7 @@ static const char *at_cmd_plus_TRDLS(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TRES(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.17 - Self test result */ 
+    /* V.250 6.7.2.17 - Self test result */
     /*  0   No test
         1   Pass
         2   Fail */
@@ -4674,7 +4748,7 @@ static const char *at_cmd_plus_TRES(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TSELF(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.16 - Self test */ 
+    /* V.250 6.7.2.16 - Self test */
     /*  0   Intrusive full test
         1   Safe partial test */
     /* TODO: */
@@ -4687,7 +4761,7 @@ static const char *at_cmd_plus_TSELF(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_TTER(at_state_t *s, const char *t)
 {
-    /* V.250 6.7.2.11 - Test error rate */ 
+    /* V.250 6.7.2.11 - Test error rate */
     /* TODO: */
     t += 5;
     if (!parse_2_out(s, &t, NULL, 65535, NULL, 65535, "+TTER:", "(0-65535),(0-65535)"))
@@ -4995,7 +5069,7 @@ static const char *at_cmd_plus_VSP(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_VTA(at_state_t *s, const char *t)
 {
-    /* V.253 10.5.4 - Train acoustic echo-canceller */ 
+    /* V.253 10.5.4 - Train acoustic echo-canceller */
     /* TODO: */
     t += 4;
     return t;
@@ -5022,7 +5096,7 @@ static const char *at_cmd_plus_VTER(at_state_t *s, const char *t)
 
 static const char *at_cmd_plus_VTH(at_state_t *s, const char *t)
 {
-    /* V.253 10.5.5 - Train line echo-canceller */ 
+    /* V.253 10.5.5 - Train line echo-canceller */
     /* TODO: */
     t += 4;
     return t;
@@ -5500,6 +5574,12 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(logging_state_t *) at_get_logging_state(at_state_t *s)
+{
+    return &s->logging;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
                                    at_tx_handler_t *at_tx_handler,
                                    void *at_tx_user_data,
@@ -5508,7 +5588,7 @@ SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (at_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (at_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, '\0', sizeof(*s));
@@ -5531,7 +5611,7 @@ SPAN_DECLARE(int) at_release(at_state_t *s)
 {
     at_reset_call_info(s);
     if (s->local_id)
-        free(s->local_id);
+        span_free(s->local_id);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5541,7 +5621,7 @@ SPAN_DECLARE(int) at_free(at_state_t *s)
     int ret;
 
     ret = at_release(s);
-    free(s);
+    span_free(s);
     return ret;
 }
 /*- End of function --------------------------------------------------------*/

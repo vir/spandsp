@@ -48,9 +48,6 @@
 
 #define PACKET_LOSS_TIME    -1
 
-#define FALSE 0
-#define TRUE (!FALSE)
-
 g1050_constants_t g1050_constants[1] =
 {
     {
@@ -746,7 +743,7 @@ static void g1050_segment_init(g1050_segment_state_t *s,
     s->max_jitter = parms->max_jitter;
 
     /* The following is common state information to all links. */
-    s->high_loss = FALSE;
+    s->high_loss = false;
     s->congestion_delay = 0.0;
     s->last_arrival_time = 0.0;
 
@@ -805,7 +802,7 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
     /* Compute delay and loss value for each time slice. */
     for (i = 0;  i < len;  i++)
     {
-        lose = FALSE;
+        lose = false;
         /* Initialize delay to the serial delay plus some jitter. */
         slice_delay = s->serial_delay + s->max_jitter*q1050_rand();
         /* If no QoS, do congestion delay and packet loss analysis. */
@@ -826,14 +823,14 @@ static void g1050_segment_model(g1050_segment_state_t *s, double delays[], int l
             }
 
             if (was_high_loss  &&  q1050_rand() < s->prob_packet_loss)
-                lose = TRUE;
+                lose = true;
             /* Single pole LPF for the congestion delay impulses. */
             s->congestion_delay = s->congestion_delay*s->impulse_coeff + impulse*(1.0 - s->impulse_coeff);
             slice_delay += s->congestion_delay;
         }
         /* If duplex mismatch on LAN, packet loss based on loss probability. */
         if (s->multiple_access  &&  (q1050_rand() < s->prob_packet_collision_loss))
-            lose = TRUE;
+            lose = true;
         /* Put computed delay into time slice array. */
         if (lose)
         {
@@ -856,7 +853,7 @@ static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
 
     for (i = 0;  i < len;  i++)
     {
-        lose = FALSE;
+        lose = false;
         jitter_delay = s->base_delay + s->max_jitter*q1050_rand();
         /* Route flapping */
         if (--s->route_flap_counter <= 0)
@@ -866,18 +863,18 @@ static void g1050_core_model(g1050_core_state_t *s, double delays[], int len)
             s->route_flap_counter = s->route_flap_interval;
         }
         if (q1050_rand() < s->prob_packet_loss)
-            lose = TRUE;
+            lose = true;
         /* Link failures */
         if (--s->link_failure_counter <= 0)
         {
             /* We are in a link failure */
-            lose = TRUE;
+            lose = true;
             if (--s->link_recovery_counter <= 0)
             {
                 /* Leave failure state. */
                 s->link_failure_counter = s->link_failure_interval_ticks;
                 s->link_recovery_counter = s->link_failure_duration_ticks;
-                lose = FALSE;
+                lose = false;
             }
         }
         if (lose)
@@ -1126,7 +1123,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &mo->sidea_lan,
                        sp->sidea_lan_bit_rate,
                        sp->sidea_lan_multiple_access,
-                       FALSE,
+                       false,
                        packet_size,
                        packet_rate);
     g1050_segment_init(&s->segment[1],
@@ -1134,7 +1131,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &constants->segment[1],
                        &mo->sidea_access_link,
                        sp->sidea_access_link_bit_rate_ab,
-                       FALSE,
+                       false,
                        sp->sidea_access_link_qos_enabled,
                        packet_size,
                        packet_rate);
@@ -1144,7 +1141,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &constants->segment[2],
                        &mo->sideb_access_link,
                        sp->sideb_access_link_bit_rate_ba,
-                       FALSE,
+                       false,
                        sp->sideb_access_link_qos_enabled,
                        packet_size,
                        packet_rate);
@@ -1154,7 +1151,7 @@ SPAN_DECLARE(g1050_state_t *) g1050_init(int model,
                        &mo->sideb_lan,
                        sp->sideb_lan_bit_rate,
                        sp->sideb_lan_multiple_access,
-                       FALSE,
+                       false,
                        packet_size,
                        packet_rate);
 

@@ -42,9 +42,15 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/time_scale.h"
 #include "spandsp/saturated.h"
@@ -86,7 +92,7 @@ static __inline__ void overlap_add(int16_t amp1[], int16_t amp2[], int len)
     int i;
     float weight;
     float step;
-    
+
     step = 1.0f/len;
     weight = 0.0f;
     for (i = 0;  i < len;  i++)
@@ -129,13 +135,13 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
 
     if (sample_rate > TIME_SCALE_MAX_SAMPLE_RATE)
         return NULL;
-    alloced = FALSE;
+    alloced = false;
     if (s == NULL)
     {
-        if ((s = (time_scale_state_t *) malloc(sizeof (*s))) == NULL)
-            return  NULL;
+        if ((s = (time_scale_state_t *) span_alloc(sizeof (*s))) == NULL)
+            return NULL;
         /*endif*/
-        alloced = TRUE;
+        alloced = true;
     }
     /*endif*/
     s->sample_rate = sample_rate;
@@ -145,7 +151,7 @@ SPAN_DECLARE(time_scale_state_t *) time_scale_init(time_scale_state_t *s, int sa
     if (time_scale_rate(s, playout_rate))
     {
         if (alloced)
-            free(s);
+            span_free(s);
         return NULL;
     }
     /*endif*/
@@ -164,7 +170,7 @@ SPAN_DECLARE(int) time_scale_release(time_scale_state_t *s)
 
 SPAN_DECLARE(int) time_scale_free(time_scale_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -184,46 +190,46 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
     if (s->fill + len < s->buf_len)
     {
         /* Cannot continue without more samples */
-        memcpy(s->buf + s->fill, in, sizeof(int16_t)*len);
+        memcpy(&s->buf[s->fill], in, sizeof(int16_t)*len);
         s->fill += len;
         return out_len;
     }
     k = s->buf_len - s->fill;
-    memcpy(s->buf + s->fill, in, sizeof(int16_t)*k);
+    memcpy(&s->buf[s->fill], in, sizeof(int16_t)*k);
     in_len += k;
     s->fill = s->buf_len;
     while (s->fill == s->buf_len)
     {
         while (s->lcp >= s->buf_len)
         {
-            memcpy(out + out_len, s->buf, sizeof(int16_t)*s->buf_len);
+            memcpy(&out[out_len], s->buf, sizeof(int16_t)*s->buf_len);
             out_len += s->buf_len;
             if (len - in_len < s->buf_len)
             {
                 /* Cannot continue without more samples */
-                memcpy(s->buf, in + in_len, sizeof(int16_t)*(len - in_len));
+                memcpy(s->buf, &in[in_len], sizeof(int16_t)*(len - in_len));
                 s->fill = len - in_len;
                 s->lcp -= s->buf_len;
                 return out_len;
             }
-            memcpy(s->buf, in + in_len, sizeof(int16_t)*s->buf_len);
+            memcpy(s->buf, &in[in_len], sizeof(int16_t)*s->buf_len);
             in_len += s->buf_len;
             s->lcp -= s->buf_len;
         }
         if (s->lcp > 0)
         {
-            memcpy(out + out_len, s->buf, sizeof(int16_t)*s->lcp);
+            memcpy(&out[out_len], s->buf, sizeof(int16_t)*s->lcp);
             out_len += s->lcp;
-            memcpy(s->buf, s->buf + s->lcp, sizeof(int16_t)*(s->buf_len - s->lcp));
+            memmove(s->buf, &s->buf[s->lcp], sizeof(int16_t)*(s->buf_len - s->lcp));
             if (len - in_len < s->lcp)
             {
                 /* Cannot continue without more samples */
-                memcpy(s->buf + (s->buf_len - s->lcp), in + in_len, sizeof(int16_t)*(len - in_len));
+                memcpy(&s->buf[s->buf_len - s->lcp], &in[in_len], sizeof(int16_t)*(len - in_len));
                 s->fill = s->buf_len - s->lcp + len - in_len;
                 s->lcp = 0;
                 return out_len;
             }
-            memcpy(s->buf + (s->buf_len - s->lcp), in + in_len, sizeof(int16_t)*s->lcp);
+            memcpy(&s->buf[s->buf_len - s->lcp], &in[in_len], sizeof(int16_t)*s->lcp);
             in_len += s->lcp;
             s->lcp = 0;
         }
@@ -252,24 +258,24 @@ SPAN_DECLARE(int) time_scale(time_scale_state_t *s, int16_t out[], int16_t in[],
             if (s->playout_rate < 1.0f)
             {
                 /* Speed up - drop a chunk of data */
-                overlap_add(s->buf, s->buf + pitch, pitch);
+                overlap_add(s->buf, &s->buf[pitch], pitch);
                 memcpy(&s->buf[pitch], &s->buf[2*pitch], sizeof(int16_t)*(s->buf_len - 2*pitch));
                 if (len - in_len < pitch)
                 {
                     /* Cannot continue without more samples */
-                    memcpy(s->buf + s->buf_len - pitch, in + in_len, sizeof(int16_t)*(len - in_len));
+                    memcpy(&s->buf[s->buf_len - pitch], &in[in_len], sizeof(int16_t)*(len - in_len));
                     s->fill += (len - in_len - pitch);
                     return out_len;
                 }
-                memcpy(s->buf + s->buf_len - pitch, in + in_len, sizeof(int16_t)*pitch);
+                memcpy(&s->buf[s->buf_len - pitch], &in[in_len], sizeof(int16_t)*pitch);
                 in_len += pitch;
             }
             else
             {
                 /* Slow down - insert a chunk of data */
-                memcpy(out + out_len, s->buf, sizeof(int16_t)*pitch);
+                memcpy(&out[out_len], s->buf, sizeof(int16_t)*pitch);
                 out_len += pitch;
-                overlap_add(s->buf + pitch, s->buf, pitch);
+                overlap_add(&s->buf[pitch], s->buf, pitch);
             }
         }
     }

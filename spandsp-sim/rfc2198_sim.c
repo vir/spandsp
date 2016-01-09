@@ -49,9 +49,6 @@
 
 #define PACKET_LOSS_TIME    -1
 
-#define FALSE 0
-#define TRUE (!FALSE)
-
 SPAN_DECLARE(rfc2198_sim_state_t *) rfc2198_sim_init(int model,
                                                      int speed_pattern,
                                                      int packet_size,

@@ -50,6 +50,7 @@
 #include <tiffio.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/queue.h"
@@ -622,89 +623,89 @@ static void release_resources(t30_state_t *s)
 {
     if (s->tx_info.nsf)
     {
-        free(s->tx_info.nsf);
+        span_free(s->tx_info.nsf);
         s->tx_info.nsf = NULL;
     }
     s->tx_info.nsf_len = 0;
     if (s->tx_info.nsc)
     {
-        free(s->tx_info.nsc);
+        span_free(s->tx_info.nsc);
         s->tx_info.nsc = NULL;
     }
     s->tx_info.nsc_len = 0;
     if (s->tx_info.nss)
     {
-        free(s->tx_info.nss);
+        span_free(s->tx_info.nss);
         s->tx_info.nss = NULL;
     }
     s->tx_info.nss_len = 0;
     if (s->tx_info.tsa)
     {
-        free(s->tx_info.tsa);
+        span_free(s->tx_info.tsa);
         s->tx_info.tsa = NULL;
     }
     if (s->tx_info.ira)
     {
-        free(s->tx_info.ira);
+        span_free(s->tx_info.ira);
         s->tx_info.ira = NULL;
     }
     if (s->tx_info.cia)
     {
-        free(s->tx_info.cia);
+        span_free(s->tx_info.cia);
         s->tx_info.cia = NULL;
     }
     if (s->tx_info.isp)
     {
-        free(s->tx_info.isp);
+        span_free(s->tx_info.isp);
         s->tx_info.isp = NULL;
     }
     if (s->tx_info.csa)
     {
-        free(s->tx_info.csa);
+        span_free(s->tx_info.csa);
         s->tx_info.csa = NULL;
     }
 
     if (s->rx_info.nsf)
     {
-        free(s->rx_info.nsf);
+        span_free(s->rx_info.nsf);
         s->rx_info.nsf = NULL;
     }
     s->rx_info.nsf_len = 0;
     if (s->rx_info.nsc)
     {
-        free(s->rx_info.nsc);
+        span_free(s->rx_info.nsc);
         s->rx_info.nsc = NULL;
     }
     s->rx_info.nsc_len = 0;
     if (s->rx_info.nss)
     {
-        free(s->rx_info.nss);
+        span_free(s->rx_info.nss);
         s->rx_info.nss = NULL;
     }
     s->rx_info.nss_len = 0;
     if (s->rx_info.tsa)
     {
-        free(s->rx_info.tsa);
+        span_free(s->rx_info.tsa);
         s->rx_info.tsa = NULL;
     }
     if (s->rx_info.ira)
     {
-        free(s->rx_info.ira);
+        span_free(s->rx_info.ira);
         s->rx_info.ira = NULL;
     }
     if (s->rx_info.cia)
     {
-        free(s->rx_info.cia);
+        span_free(s->rx_info.cia);
         s->rx_info.cia = NULL;
     }
     if (s->rx_info.isp)
     {
-        free(s->rx_info.isp);
+        span_free(s->rx_info.isp);
         s->rx_info.isp = NULL;
     }
     if (s->rx_info.csa)
     {
-        free(s->rx_info.csa);
+        span_free(s->rx_info.csa);
         s->rx_info.csa = NULL;
     }
 }
@@ -1623,7 +1624,7 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bit(s->dcs_frame, 19);
 
     if (s->error_correcting_mode)
-        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_ECM_MODE);
 
     if ((s->iaf & T30_IAF_MODE_FLOW_CONTROL)  &&  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38_FLOW_CONTROL_CAPABLE))
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_T38_FLOW_CONTROL_CAPABLE);
@@ -2079,7 +2080,6 @@ static int start_receiving_document(t30_state_t *s)
         return -1;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "Start receiving document\n");
-    queue_phase(s, T30_PHASE_B_TX);
     s->ecm_block = 0;
     send_dis_or_dtc_sequence(s, true);
     return 0;
@@ -2116,6 +2116,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
 {
     int new_status;
 
+    queue_phase(s, T30_PHASE_B_TX);
     t30_decode_dis_dtc_dcs(s, msg, len);
     if (len < 6)
     {
@@ -2224,7 +2225,6 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
     }
-    queue_phase(s, T30_PHASE_B_TX);
     /* Try to send something */
     if (s->tx_file[0])
     {
@@ -2251,7 +2251,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dcs_sequence(s, true);
         return 0;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to send\n", t30_frametype(msg[2]));
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s - nothing to send\n", t30_frametype(msg[2]));
     /* ... then try to receive something */
     if (s->rx_file[0])
     {
@@ -2278,7 +2278,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
         send_dis_or_dtc_sequence(s, true);
         return 0;
     }
-    span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to receive\n", t30_frametype(msg[2]));
+    span_log(&s->logging, SPAN_LOG_FLOW, "%s - nothing to receive\n", t30_frametype(msg[2]));
     /* There is nothing to do, or nothing we are able to do. */
     send_dcn(s);
     return -1;
@@ -2399,7 +2399,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
         span_log(&s->logging, SPAN_LOG_FLOW, "Remote asked for a modem standard we do not support\n");
         return -1;
     }
-    s->error_correcting_mode = (test_ctrl_bit(dcs_frame, T30_DCS_BIT_ECM) != 0);
+    s->error_correcting_mode = (test_ctrl_bit(dcs_frame, T30_DCS_BIT_ECM_MODE) != 0);
 
     if (s->phase_b_handler)
     {
@@ -4731,6 +4731,7 @@ static void queue_phase(t30_state_t *s, int phase)
     if (s->rx_signal_present)
     {
         /* We need to wait for that signal to go away */
+        //if (s->next_phase != phase  &&  s->next_phase != T30_PHASE_IDLE)
         if (s->next_phase != T30_PHASE_IDLE)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
@@ -4740,6 +4741,7 @@ static void queue_phase(t30_state_t *s, int phase)
                 s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
         }
         s->next_phase = phase;
+        span_log(&s->logging, SPAN_LOG_FLOW, "Queuing phase %s\n", phase_names[s->next_phase]);
     }
     else
     {
@@ -4751,7 +4753,7 @@ static void queue_phase(t30_state_t *s, int phase)
 
 static void set_phase(t30_state_t *s, int phase)
 {
-    if (phase != s->next_phase  &&  s->next_phase != T30_PHASE_IDLE)
+    if (s->next_phase != phase  &&  s->next_phase != T30_PHASE_IDLE)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
         /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next
@@ -5305,7 +5307,7 @@ static int decode_nsf_nss_nsc(t30_state_t *s, uint8_t *msg[], const uint8_t *pkt
 {
     uint8_t *t;
 
-    if ((t = malloc(len - 1)) == NULL)
+    if ((t = span_alloc(len - 1)) == NULL)
         return 0;
     memcpy(t, &pkt[1], len - 1);
     *msg = t;
@@ -6335,7 +6337,7 @@ SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
 {
     if (s == NULL)
     {
-        if ((s = (t30_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (t30_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -6377,7 +6379,7 @@ SPAN_DECLARE(int) t30_release(t30_state_t *s)
 SPAN_DECLARE(int) t30_free(t30_state_t *s)
 {
     t30_release(s);
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -26,7 +26,7 @@
 /*! \file */
 
 #if defined(T42_USE_LUTS)
-static const float sRGB_to_linear[256] =
+static const float srgb_to_linear[256] =
 {
     0.000000,
     0.000302,
@@ -286,7 +286,7 @@ static const float sRGB_to_linear[256] =
     0.991137
 };
 
-static const uint8_t linear_to_sRGB[4096] =
+static const uint8_t linear_to_srgb[4096] =
 {
     0,
     0,

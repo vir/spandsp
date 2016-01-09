@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
     channel_codec = MUNGE_CODEC_NONE;
     line_model_no = 0;
     rbs_pattern = 0;
-    speech_test = FALSE;
+    speech_test = false;
     while ((opt = getopt(argc, argv, "c:m:r:s:")) != -1)
     {
         switch (opt)

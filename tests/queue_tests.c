@@ -699,17 +699,17 @@ int main(int argc, char *argv[])
     int threaded_streams;
     int opt;
 
-    threaded_messages = FALSE;
-    threaded_streams = FALSE;
+    threaded_messages = false;
+    threaded_streams = false;
     while ((opt = getopt(argc, argv, "ms")) != -1)
     {
         switch (opt)
         {
         case 'm':
-            threaded_messages = TRUE;
+            threaded_messages = true;
             break;
         case 's':
-            threaded_streams = TRUE;
+            threaded_streams = true;
             break;
         }
     }

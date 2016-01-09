@@ -45,6 +45,7 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/complex.h"
@@ -60,6 +61,7 @@
 #include "spandsp/v22bis.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/power_meter.h"
 #include "spandsp/private/v22bis.h"
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -650,7 +652,7 @@ SPAN_DECLARE(v22bis_state_t *) v22bis_init(v22bis_state_t *s,
     }
     if (s == NULL)
     {
-        if ((s = (v22bis_state_t *) malloc(sizeof(*s))) == NULL)
+        if ((s = (v22bis_state_t *) span_alloc(sizeof(*s))) == NULL)
             return NULL;
     }
     memset(s, 0, sizeof(*s));
@@ -698,7 +700,7 @@ SPAN_DECLARE(int) v22bis_release(v22bis_state_t *s)
 
 SPAN_DECLARE(int) v22bis_free(v22bis_state_t *s)
 {
-    free(s);
+    span_free(s);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

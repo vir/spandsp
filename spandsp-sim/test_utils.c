@@ -66,12 +66,12 @@ struct complexify_state_s
 };
 
 static complex_t circle[MAX_FFT_LEN/2];
-static int circle_init = FALSE;
+static int circle_init = false;
 static complex_t icircle[MAX_FFT_LEN/2];
-static int icircle_init = FALSE;
+static int icircle_init = false;
 
 #define SF_MAX_HANDLE   32
-static int sf_close_at_exit_registered = FALSE;
+static int sf_close_at_exit_registered = false;
 static SNDFILE *sf_close_at_exit_list[SF_MAX_HANDLE] =
 {
     NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -243,7 +243,7 @@ SPAN_DECLARE(void) fft(complex_t data[], int len)
             x = -(2.0*3.1415926535*i)/(double) MAX_FFT_LEN;
             circle[i] = expj(x);
         }
-        circle_init = TRUE;
+        circle_init = true;
     }
     fftx(data, temp, len);
 }
@@ -263,7 +263,7 @@ SPAN_DECLARE(void) ifft(complex_t data[], int len)
             x = (2.0*3.1415926535*i)/(double) MAX_FFT_LEN;
             icircle[i] = expj(x);
         }
-        icircle_init = TRUE;
+        icircle_init = true;
     }
     ifftx(data, temp, len);
 }
@@ -389,7 +389,7 @@ static int sf_record_handle(SNDFILE *handle)
     if (!sf_close_at_exit_registered)
     {
         atexit(sf_close_at_exit);
-        sf_close_at_exit_registered = TRUE;
+        sf_close_at_exit_registered = true;
     }
     return 0;
 }

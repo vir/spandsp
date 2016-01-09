@@ -65,7 +65,7 @@ These tests allow either:
 char *decode_test_file = NULL;
 both_ways_line_model_state_t *model;
 int rx_bits = 0;
-int cutoff_test_carrier = FALSE;
+int cutoff_test_carrier = false;
 
 static void rx_status(void *user_data, int status)
 {
@@ -97,10 +97,10 @@ static void cutoff_test_rx_status(void *user_data, int status)
     switch (status)
     {
     case SIG_STATUS_CARRIER_UP:
-        cutoff_test_carrier = TRUE;
+        cutoff_test_carrier = true;
         break;
     case SIG_STATUS_CARRIER_DOWN:
-        cutoff_test_carrier = FALSE;
+        cutoff_test_carrier = false;
         break;
     }
 }
@@ -203,10 +203,10 @@ int main(int argc, char *argv[])
     rbs_pattern = 0;
     line_model_no = 0;
     decode_test_file = NULL;
-    noise_sweep = FALSE;
+    noise_sweep = false;
     modem_under_test_1 = FSK_V21CH1;
     modem_under_test_2 = FSK_V21CH2;
-    log_audio = FALSE;
+    log_audio = false;
     modems_set = 0;
     while ((opt = getopt(argc, argv, "c:d:lm:nr:s:")) != -1)
     {
@@ -219,13 +219,13 @@ int main(int argc, char *argv[])
             decode_test_file = optarg;
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'm':
             line_model_no = atoi(optarg);
             break;
         case 'n':
-            noise_sweep = TRUE;
+            noise_sweep = true;
             break;
         case 'r':
             rbs_pattern = atoi(optarg);
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
                                      0,
                                      0,
                                      0,
-                                     TRUE);
+                                     true);
             tone_gen_init(&tone_tx, &tone_desc);
             for (j = 0;  j < 10;  j++)
             {
@@ -342,7 +342,7 @@ int main(int argc, char *argv[])
                                      0,
                                      0,
                                      0,
-                                     TRUE);
+                                     true);
             tone_gen_init(&tone_tx, &tone_desc);
             for (j = 0;  j < 10;  j++)
             {

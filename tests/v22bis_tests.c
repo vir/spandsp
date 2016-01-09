@@ -63,7 +63,7 @@ display of modem status is maintained.
 #define OUT_FILE_NAME   "v22bis.wav"
 
 char *decode_test_file = NULL;
-int use_gui = FALSE;
+int use_gui = false;
 
 int rx_bits = 0;
 
@@ -285,7 +285,7 @@ int main(int argc, char *argv[])
     signal_level = -13;
     bits_per_test = 50000;
     guard_tone_option = V22BIS_GUARD_TONE_1800HZ;
-    log_audio = FALSE;
+    log_audio = false;
     while ((opt = getopt(argc, argv, "b:B:c:d:gG:lm:n:r:s:")) != -1)
     {
         switch (opt)
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
             break;
         case 'g':
 #if defined(ENABLE_GUI)
-            use_gui = TRUE;
+            use_gui = true;
 #else
             fprintf(stderr, "Graphical monitoring not available\n");
             exit(2);
@@ -319,7 +319,7 @@ int main(int argc, char *argv[])
             guard_tone_option = atoi(optarg);
             break;
         case 'l':
-            log_audio = TRUE;
+            log_audio = true;
             break;
         case 'm':
             line_model_no = atoi(optarg);

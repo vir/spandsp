@@ -98,21 +98,21 @@ int main(int argc, char *argv[])
     const char *decompressed_file;
 
     argv0 = argv[0];
-    do_compression = FALSE;
-    do_decompression = FALSE;
-    stutter_compression = FALSE;
+    do_compression = false;
+    do_decompression = false;
+    stutter_compression = false;
     while ((opt = getopt(argc, argv, "cds")) != -1)
     {
         switch (opt)
         {
         case 'c':
-            do_compression = TRUE;
+            do_compression = true;
             break;
         case 'd':
-            do_decompression = TRUE;
+            do_decompression = true;
             break;
         case 's':
-            stutter_compression = TRUE;
+            stutter_compression = true;
             break;
         default:
             //usage();

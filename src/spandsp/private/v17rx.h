@@ -72,8 +72,15 @@ struct v17_rx_state_s
                routine. */
     void *qam_user_data;
 
+#if 1 //defined(RESCALER_TEST)
+    /* Experimental data for AGC tolerance */
+    int16_t power_window[40];
+    int power_window_ptr;
+    int64_t window_power;
+    int64_t window_power_save;
+#endif
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
@@ -110,7 +117,7 @@ struct v17_rx_state_s
     /*! \brief A pointer to the current constellation. */
     const complexi16_t *constellation;
 #else
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
@@ -157,7 +164,7 @@ struct v17_rx_state_s
     /*! \brief Scrambler tap */
     //int scrambler_tap;
 
-    /*! \brief TRUE if the short training sequence is to be used. */
+    /*! \brief True if the short training sequence is to be used. */
     int short_train;
     /*! \brief The section of the training data we are currently in. */
     int training_stage;
@@ -181,7 +188,7 @@ struct v17_rx_state_s
     /*! \brief The carrier update rate saved for reuse when using short training. */
     int32_t carrier_phase_rate_save;
 
-    /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
+    /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */
     power_meter_t power;
     /*! \brief The power meter level at which carrier on is declared. */
     int32_t carrier_on_power;
