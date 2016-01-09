@@ -209,7 +209,7 @@ SPAN_DECLARE_NONSTD(int) fsk_tx(fsk_tx_state_t *s, int16_t amp[], int len)
             }
             s->current_phase_rate = s->phase_rates[bit & 1];
         }
-        amp[sample] = dds_mod(&(s->phase_acc), s->current_phase_rate, s->scaling, 0);
+        amp[sample] = dds_mod(&s->phase_acc, s->current_phase_rate, s->scaling, 0);
     }
     return sample;
 }
@@ -305,7 +305,7 @@ SPAN_DECLARE(int) fsk_rx_restart(fsk_rx_state_t *s, const fsk_spec_t *spec, int 
     s->last_bit = 0;
     
     /* Initialise a power detector, so sense when a signal is present. */
-    power_meter_init(&(s->power), 4);
+    power_meter_init(&s->power, 4);
     s->signal_present = 0;
     return 0;
 }
@@ -377,7 +377,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
             s->dot[j].re -= s->window[j][buf_ptr].re;
             s->dot[j].im -= s->window[j][buf_ptr].im;
 
-            ph = dds_complexi(&(s->phase_acc[j]), s->phase_rate[j]);
+            ph = dds_complexi(&s->phase_acc[j], s->phase_rate[j]);
             s->window[j][buf_ptr].re = (ph.re*amp[i]) >> s->scaling_shift;
             s->window[j][buf_ptr].im = (ph.im*amp[i]) >> s->scaling_shift;
 
@@ -395,7 +395,7 @@ SPAN_DECLARE_NONSTD(int) fsk_rx(fsk_rx_state_t *s, const int16_t *amp, int len)
            We need to measure the power with the DC blocked, but not using
            a slow to respond DC blocker. Use the most elementary HPF. */
         x = amp[i] >> 1;
-        power = power_meter_update(&(s->power), x - s->last_sample);
+        power = power_meter_update(&s->power, x - s->last_sample);
         s->last_sample = x;
         if (s->signal_present)
         {

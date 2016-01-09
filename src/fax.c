@@ -122,8 +122,8 @@ static void fax_send_hdlc(void *user_data, const uint8_t *msg, int len)
     fax_state_t *s;
 
     s = (fax_state_t *) user_data;
-    
-    hdlc_tx_frame(&s->modems.hdlc_tx, msg, len);
+
+    fax_modems_hdlc_tx_frame(&s->modems, msg, len);
 }
 /*- End of function --------------------------------------------------------*/
 

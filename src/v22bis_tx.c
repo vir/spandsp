@@ -476,12 +476,12 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
             x.im += tx_pulseshaper[39 - s->tx.baud_phase][i]*s->tx.rrc_filter[i + s->tx.rrc_filter_step].im;
         }
         /* Now create and modulate the carrier */
-        z = dds_complexf(&(s->tx.carrier_phase), s->tx.carrier_phase_rate);
+        z = dds_complexf(&s->tx.carrier_phase, s->tx.carrier_phase_rate);
         famp = (x.re*z.re - x.im*z.im)*s->tx.gain;
         if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[s->tx.rrc_filter_step].im != 0.0f))
         {
             /* Add the guard tone */
-            famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_level, 0);
+            famp += dds_modf(&s->tx.guard_phase, s->tx.guard_phase_rate, s->tx.guard_level, 0);
         }
         /* Don't bother saturating. We should never clip. */
         amp[sample] = (int16_t) lfastrintf(famp);

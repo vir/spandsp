@@ -18,7 +18,7 @@
 
 # @start 1
 
-AC_INIT
+AC_INIT([spandsp], [0.0.6])
 
 SPANDSP_MAJOR_VERSION=0
 SPANDSP_MINOR_VERSION=0
@@ -34,6 +34,7 @@ m4_include(m4/ax_fixed_point_machine.m4)
 m4_include(m4/ax_misaligned_access_fails.m4)
 m4_include(m4/ax_c99_features.m4)
 m4_include(m4/ax_check_export_capability.m4)
+m4_include(m4/ax_check_arm_neon.m4)
 
 VERSION=$SPANDSP_MAJOR_VERSION.$SPANDSP_MINOR_VERSION.$SPANDSP_MICRO_VERSION
 PACKAGE=spandsp
@@ -45,7 +46,7 @@ AC_SUBST(SPANDSP_LT_AGE)
 AC_CONFIG_SRCDIR([src/tone_generate.c])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS([src/config.h:config-h.in])
-AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
+AM_INIT_AUTOMAKE([1.9.5])
 
 AC_CANONICAL_HOST
 #AC_CANONICAL_BUILD
@@ -190,6 +191,8 @@ AC_HEADER_TIME
 AC_CHECK_HEADERS([socket.h])
 AC_CHECK_HEADERS([inttypes.h], [INSERT_INTTYPES_HEADER="#include <inttypes.h>"])
 AC_CHECK_HEADERS([stdint.h], [INSERT_STDINT_HEADER="#include <stdint.h>"])
+AC_CHECK_HEADERS([stdatomic.h])
+AC_CHECK_HEADERS([stdbool.h], [INSERT_STDBOOL_HEADER="#include <stdbool.h>"], [INSERT_STDBOOL_HEADER="#include <spandsp/stdbool.h>"])
 AC_CHECK_HEADERS([unistd.h])
 AC_CHECK_HEADERS([stdlib.h])
 AC_CHECK_HEADERS([string.h])
@@ -532,6 +535,7 @@ AC_SUBST(INSERT_INTTYPES_HEADER)
 AC_SUBST(INSERT_STDINT_HEADER)
 AC_SUBST(INSERT_TGMATH_HEADER)
 AC_SUBST(INSERT_MATH_HEADER)
+AC_SUBST(INSERT_STDBOOL_HEADER)
 
 AC_CONFIG_FILES([Makefile
                  doc/Makefile

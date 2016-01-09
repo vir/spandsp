@@ -86,6 +86,59 @@
 
 #define HDLC_FRAMING_OK_THRESHOLD               5
 
+SPAN_DECLARE(const char *) fax_modem_to_str(int modem)
+{
+    switch (modem)
+    {
+    case FAX_MODEM_NONE:
+        return "None";
+    case FAX_MODEM_FLUSH:
+        return "Flush";
+    case FAX_MODEM_SILENCE_TX:
+        return "Silence Tx";
+    case FAX_MODEM_SILENCE_RX:
+        return "Silence Rx";
+    case FAX_MODEM_V21_TX:
+        return "V.21 Tx";
+    case FAX_MODEM_V17_TX:
+        return "V.17 Tx";
+    case FAX_MODEM_V27TER_TX:
+        return "V.27ter Tx";
+    case FAX_MODEM_V29_TX:
+        return "V.29 Tx";
+    case FAX_MODEM_V21_RX:
+        return "V.21 Rx";
+    case FAX_MODEM_V17_RX:
+        return "V.17 Rx";
+    case FAX_MODEM_V27TER_RX:
+        return "V.27ter Rx";
+    case FAX_MODEM_V29_RX:
+        return "V.29 Rx";
+#if defined(SPANDSP_SUPPORT_V34)
+    case FAX_MODEM_V34_TX:
+        return "V.34 HDX Tx";
+    case FAX_MODEM_V34_RX:
+        return "V.34 HDX Rx";
+#endif
+    }
+    /*endswitch*/
+    return "???";
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE_NONSTD(void) fax_modems_hdlc_tx_frame(void *user_data, const uint8_t *msg, int len)
+{
+    fax_modems_state_t *s;
+
+    s = (fax_modems_state_t *) user_data;
+
+    if (len == -1)
+        hdlc_tx_restart(&s->hdlc_tx);
+    else
+        hdlc_tx_frame(&s->hdlc_tx, msg, len);
+}
+/*- End of function --------------------------------------------------------*/
+
 static void fax_modems_set_rx_handler(fax_modems_state_t *s,
                                       span_rx_handler_t rx_handler,
                                       void *rx_user_data,

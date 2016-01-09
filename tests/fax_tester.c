@@ -86,15 +86,15 @@ static void front_end_step_complete(faxtester_state_t *s)
 
 void faxtester_send_hdlc_flags(faxtester_state_t *s, int flags)
 {
-    hdlc_tx_flags(&(s->modems.hdlc_tx), flags);
+    hdlc_tx_flags(&s->modems.hdlc_tx, flags);
 }
 /*- End of function --------------------------------------------------------*/
 
 void faxtester_send_hdlc_msg(faxtester_state_t *s, const uint8_t *msg, int len, int crc_ok)
 {
-    hdlc_tx_frame(&(s->modems.hdlc_tx), msg, len);
+    hdlc_tx_frame(&s->modems.hdlc_tx, msg, len);
     if (!crc_ok)
-        hdlc_tx_corrupt_frame(&(s->modems.hdlc_tx));
+        hdlc_tx_corrupt_frame(&s->modems.hdlc_tx);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -115,9 +115,9 @@ static void hdlc_underflow_handler(void *user_data)
             buf[2] = 0x06;
             buf[3] = s->image_ptr/s->ecm_frame_size;
             memcpy(buf + 4, &s->image_buffer[s->image_ptr], s->ecm_frame_size);
-            hdlc_tx_frame(&(s->modems.hdlc_tx), buf, 4 + s->ecm_frame_size);
+            hdlc_tx_frame(&s->modems.hdlc_tx, buf, 4 + s->ecm_frame_size);
             if (s->corrupt_crc >= 0  &&  s->corrupt_crc == s->image_ptr/s->ecm_frame_size)
-                hdlc_tx_corrupt_frame(&(s->modems.hdlc_tx));
+                hdlc_tx_corrupt_frame(&s->modems.hdlc_tx);
             s->image_ptr += s->ecm_frame_size;
             return;
         }
@@ -130,7 +130,7 @@ static void hdlc_underflow_handler(void *user_data)
                 buf[0] = 0xFF;
                 buf[1] = 0x03;
                 buf[2] = 0x86;
-                hdlc_tx_frame(&(s->modems.hdlc_tx), buf, 3);
+                hdlc_tx_frame(&s->modems.hdlc_tx, buf, 3);
                 return;
             }
             else
@@ -388,7 +388,7 @@ int faxtester_rx(faxtester_state_t *s, int16_t *amp, int len)
     int i;
 
     for (i = 0;  i < len;  i++)
-        amp[i] = dc_restore(&(s->modems.dc_restore), amp[i]);
+        amp[i] = dc_restore(&s->modems.dc_restore, amp[i]);
     s->modems.rx_handler(s->modems.rx_user_data, amp, len);
     timer_update(s, len);
     if (s->wait_for_silence)

@@ -619,6 +619,10 @@ SOURCE=.\spandsp/schedule.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/stdbool.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/sig_tone.h
 # End Source File
 # Begin Source File

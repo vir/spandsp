@@ -41,6 +41,11 @@
 #if defined(HAVE_MATH_H)
 #include <math.h>
 #endif
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 #include "floating_fudge.h"
 #include <tiffio.h>
 
@@ -689,7 +694,7 @@ static uint8_t check_next_tx_step(t30_state_t *s)
     if (s->document_handler)
         more = s->document_handler(s, s->document_user_data, 0);
     else
-        more = FALSE;
+        more = false;
     if (more)
     {
         //if (test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_MULTIPLE_SELECTIVE_POLLING_CAPABLE))
@@ -734,7 +739,7 @@ static int get_partial_ecm_page(t30_state_t *s)
             }
             s->ecm_frames = i;
             span_log(&s->logging, SPAN_LOG_FLOW, "Partial page buffer contains %d frames (%d per frame)\n", i, s->octets_per_ecm_frame);
-            s->ecm_at_page_end = TRUE;
+            s->ecm_at_page_end = true;
             return i;
         }
         s->ecm_len[i] = (int16_t) (4 + len);
@@ -783,7 +788,7 @@ static int send_next_ecm_frame(t30_state_t *s)
         send_frame(s, frame, 3);
         /* In case we are just after a CTC/CTR exchange, which kicked us back
            to long training */
-        s->short_train = TRUE;
+        s->short_train = true;
         return 0;
     }
     return -1;
@@ -831,7 +836,7 @@ static void send_frame(t30_state_t *s, const uint8_t *msg, int len)
     print_frame(s, "Tx: ", msg, len);
 
     if (s->real_time_frame_handler)
-        s->real_time_frame_handler(s, s->real_time_frame_user_data, FALSE, msg, len);
+        s->real_time_frame_handler(s, s->real_time_frame_user_data, false, msg, len);
     if (s->send_hdlc_handler)
         s->send_hdlc_handler(s->send_hdlc_user_data, msg, len);
 }
@@ -878,9 +883,9 @@ static int send_nsf_frame(t30_state_t *s)
         s->tx_info.nsf[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nsf[2] = (uint8_t) (T30_NSF | s->dis_received);
         send_frame(s, s->tx_info.nsf, s->tx_info.nsf_len + 3);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -894,9 +899,9 @@ static int send_nss_frame(t30_state_t *s)
         s->tx_info.nss[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nss[2] = (uint8_t) (T30_NSS | s->dis_received);
         send_frame(s, s->tx_info.nss, s->tx_info.nss_len + 3);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -910,9 +915,9 @@ static int send_nsc_frame(t30_state_t *s)
         s->tx_info.nsc[1] = CONTROL_FIELD_NON_FINAL_FRAME;
         s->tx_info.nsc[2] = (uint8_t) (T30_NSC | s->dis_received);
         send_frame(s, s->tx_info.nsc, s->tx_info.nsc_len + 3);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -923,9 +928,9 @@ static int send_ident_frame(t30_state_t *s, uint8_t cmd)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending ident '%s'\n", s->tx_info.ident);
         /* 'cmd' should be T30_TSI, T30_CIG or T30_CSI */
         send_20digit_msg_frame(s, cmd, s->tx_info.ident);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -936,10 +941,10 @@ static int send_psa_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending polled sub-address '%s'\n", s->tx_info.polled_sub_address);
         send_20digit_msg_frame(s, T30_PSA, s->tx_info.polled_sub_address);
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_POLLED_SUBADDRESSING_CAPABLE);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -950,10 +955,10 @@ static int send_sep_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending selective polling address '%s'\n", s->tx_info.selective_polling_address);
         send_20digit_msg_frame(s, T30_SEP, s->tx_info.selective_polling_address);
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_SELECTIVE_POLLING_CAPABLE);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -965,10 +970,10 @@ static int send_sid_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending sender identification '%s'\n", s->tx_info.sender_ident);
         send_20digit_msg_frame(s, T30_SID, s->tx_info.sender_ident);
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SENDER_ID_TRANSMISSION);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SENDER_ID_TRANSMISSION);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -980,10 +985,10 @@ static int send_pwd_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending password '%s'\n", s->tx_info.password);
         send_20digit_msg_frame(s, T30_PWD, s->tx_info.password);
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_PASSWORD);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -995,10 +1000,10 @@ static int send_sub_frame(t30_state_t *s)
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending sub-address '%s'\n", s->tx_info.sub_address);
         send_20digit_msg_frame(s, T30_SUB, s->tx_info.sub_address);
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SUBADDRESS_TRANSMISSION);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_SUBADDRESS_TRANSMISSION);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1007,9 +1012,9 @@ static int send_tsa_frame(t30_state_t *s)
     if ((test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  ||  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending transmitting subscriber internet address '%s'\n", "");
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1019,10 +1024,10 @@ static int send_ira_frame(t30_state_t *s)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending internet routing address '%s'\n", "");
         set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->dcs_frame, T30_DCS_BIT_INTERNET_ROUTING_ADDRESS_TRANSMISSION);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1031,9 +1036,9 @@ static int send_cia_frame(t30_state_t *s)
     if ((test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T37)  ||  test_ctrl_bit(s->far_dis_dtc_frame, T30_DIS_BIT_T38))  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending calling subscriber internet address '%s'\n", "");
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1043,10 +1048,10 @@ static int send_isp_frame(t30_state_t *s)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending internet selective polling address '%s'\n", "");
         set_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
-        return TRUE;
+        return true;
     }
     clr_ctrl_bit(s->local_dis_dtc_frame, T30_DIS_BIT_INTERNET_SELECTIVE_POLLING_ADDRESS);
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1057,10 +1062,10 @@ static int send_csa_frame(t30_state_t *s)
     if (("in T.37 mode"  ||  "in T.38 mode")  &&  0)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Sending called subscriber internet address '%s'\n", "");
-        return TRUE;
+        return true;
     }
 #endif
-    return FALSE;
+    return false;
 }
 /*- End of function --------------------------------------------------------*/
 #endif
@@ -1981,7 +1986,7 @@ static int restart_sending_document(t30_state_t *s)
     t4_tx_restart_page(&s->t4.tx);
     s->retries = 0;
     s->ecm_block = 0;
-    send_dcs_sequence(s, TRUE);
+    send_dcs_sequence(s, true);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1997,7 +2002,7 @@ static int start_receiving_document(t30_state_t *s)
     span_log(&s->logging, SPAN_LOG_FLOW, "Start receiving document\n");
     queue_phase(s, T30_PHASE_B_TX);
     s->ecm_block = 0;
-    send_dis_or_dtc_sequence(s, TRUE);
+    send_dis_or_dtc_sequence(s, true);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2040,7 +2045,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
     }
 
     if (msg[2] == T30_DIS)
-        s->dis_received = TRUE;
+        s->dis_received = true;
     /* Make a local copy of the message, padded to the maximum possible length with zeros. This allows
        us to simply pick out the bits, without worrying about whether they were set from the remote side. */
     s->far_dis_dtc_len = (len > T30_MAX_DIS_DTC_DCS_LEN)  ?  T30_MAX_DIS_DTC_DCS_LEN  :  len;
@@ -2163,7 +2168,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
         s->retries = 0;
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         return 0;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to send\n", t30_frametype(msg[2]));
@@ -2190,7 +2195,7 @@ static int process_rx_dis_dtc(t30_state_t *s, const uint8_t *msg, int len)
             return -1;
         }
         s->retries = 0;
-        send_dis_or_dtc_sequence(s, TRUE);
+        send_dis_or_dtc_sequence(s, true);
         return 0;
     }
     span_log(&s->logging, SPAN_LOG_FLOW, "%s nothing to receive\n", t30_frametype(msg[2]));
@@ -2355,7 +2360,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     if (!(s->iaf & T30_IAF_MODE_NO_TCF))
     {
         /* TCF is always sent with long training */
-        s->short_train = FALSE;
+        s->short_train = false;
         set_state(s, T30_STATE_F_TCF);
         queue_phase(s, T30_PHASE_C_NON_ECM_RX);
         timer_t2_start(s);
@@ -2478,7 +2483,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
 
     /* Build a bit map of which frames we now have stored OK */
     first_bad_frame = 256;
-    first = TRUE;
+    first = true;
     expected_len = 256;
     for (i = 0;  i < 32;  i++)
     {
@@ -2505,7 +2510,7 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
                         /* Use the length of the first frame as our model for what the length should be */
                         if (s->ecm_len[frame_no] == 64)
                             expected_len = 64;
-                        first = FALSE;
+                        first = false;
                     }
                     /* Check the length is consistent with the first frame */
                     if (s->ecm_len[frame_no] != expected_len)
@@ -2691,7 +2696,7 @@ static void process_rx_fcd(t30_state_t *s, const uint8_t *msg, int len)
             memcpy(&s->ecm_data[frame_no][0], &msg[4], len - 4);
             s->ecm_len[frame_no] = (int16_t) (len - 4);
             /* In case we are just after a CTC/CTR exchange, which kicked us back to long training */
-            s->short_train = TRUE;
+            s->short_train = true;
         }
         /* We have received something, so any missing carrier status is out of date */
         if (s->current_status == T30_ERR_RX_NOCARRIER)
@@ -2956,7 +2961,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         /* Trainability test succeeded. Send the document. */
         span_log(&s->logging, SPAN_LOG_FLOW, "Trainability test succeeded\n");
         s->retries = 0;
-        s->short_train = TRUE;
+        s->short_train = true;
         if (s->error_correcting_mode)
         {
             set_state(s, T30_STATE_IV);
@@ -2973,7 +2978,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         /* Trainability test failed. Try again. */
         span_log(&s->logging, SPAN_LOG_FLOW, "Trainability test failed\n");
         s->retries = 0;
-        s->short_train = FALSE;
+        s->short_train = false;
         if (step_fallback_entry(s) < 0)
         {
             /* We have fallen back as far as we can go. Give up. */
@@ -2983,7 +2988,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
             break;
         }
         queue_phase(s, T30_PHASE_B_TX);
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_DIS:
         /* It appears they didn't see what we sent - retry the TCF */
@@ -2997,7 +3002,7 @@ static void process_state_d_post_tcf(t30_state_t *s, const uint8_t *msg, int len
         span_log(&s->logging, SPAN_LOG_FLOW, "Retry number %d\n", s->retries);
         queue_phase(s, T30_PHASE_B_TX);
         /* TODO: should we reassess the new DIS message, and possibly adjust the DCS we use? */
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_DCN:
         t30_set_status(s, T30_ERR_TX_BADDCS);
@@ -3364,7 +3369,7 @@ static void process_state_f_doc_and_post_doc_ecm(t30_state_t *s, const uint8_t *
         break;
     case T30_CTC:
         /* T.30 says we change back to long training here */
-        s->short_train = FALSE;
+        s->short_train = false;
         queue_phase(s, T30_PHASE_D_TX);
         set_state(s, T30_STATE_F_DOC_ECM);
         send_simple_frame(s, T30_CTR);
@@ -3615,8 +3620,8 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             if (s->phase_d_handler)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             terminate_operation_in_progress(s);
-            report_tx_result(s, TRUE);
-            return_to_phase_b(s, FALSE);
+            report_tx_result(s, true);
+            return_to_phase_b(s, false);
             break;
         case T30_PRI_EOP:
         case T30_EOP:
@@ -3625,7 +3630,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             terminate_operation_in_progress(s);
             send_dcn(s);
-            report_tx_result(s, TRUE);
+            report_tx_result(s, true);
             break;
         }
         break;
@@ -3663,7 +3668,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
                 s->phase_d_handler(s, s->phase_d_user_data, fcf);
             t4_tx_release(&s->t4.tx);
             /* TODO: should go back to T, and resend */
-            return_to_phase_b(s, TRUE);
+            return_to_phase_b(s, true);
             break;
         case T30_PRI_EOP:
         case T30_EOP:
@@ -3728,7 +3733,7 @@ static void process_state_ii_q(t30_state_t *s, const uint8_t *msg, int len)
             }
             else
             {
-                return_to_phase_b(s, TRUE);
+                return_to_phase_b(s, true);
             }
             break;
         case T30_PRI_EOP:
@@ -3968,8 +3973,8 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
-                report_tx_result(s, TRUE);
-                return_to_phase_b(s, FALSE);
+                report_tx_result(s, true);
+                return_to_phase_b(s, false);
                 break;
             case T30_PRI_EOP:
             case T30_EOP:
@@ -3978,7 +3983,7 @@ static void process_state_iv_pps_null(t30_state_t *s, const uint8_t *msg, int le
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
                 send_dcn(s);
-                report_tx_result(s, TRUE);
+                report_tx_result(s, true);
                 break;
             }
         }
@@ -4072,8 +4077,8 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
-                report_tx_result(s, TRUE);
-                return_to_phase_b(s, FALSE);
+                report_tx_result(s, true);
+                return_to_phase_b(s, false);
                 break;
             case T30_PRI_EOP:
             case T30_EOP:
@@ -4082,7 +4087,7 @@ static void process_state_iv_pps_q(t30_state_t *s, const uint8_t *msg, int len)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
                 send_dcn(s);
-                report_tx_result(s, TRUE);
+                report_tx_result(s, true);
                 break;
             }
         }
@@ -4187,8 +4192,8 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
                 if (s->phase_d_handler)
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
-                report_tx_result(s, TRUE);
-                return_to_phase_b(s, FALSE);
+                report_tx_result(s, true);
+                return_to_phase_b(s, false);
                 break;
             case T30_PRI_EOP:
             case T30_EOP:
@@ -4197,7 +4202,7 @@ static void process_state_iv_pps_rnr(t30_state_t *s, const uint8_t *msg, int len
                     s->phase_d_handler(s, s->phase_d_user_data, fcf);
                 terminate_operation_in_progress(s);
                 send_dcn(s);
-                report_tx_result(s, TRUE);
+                report_tx_result(s, true);
                 break;
             }
         }
@@ -4248,7 +4253,7 @@ static void process_state_iv_ctc(t30_state_t *s, const uint8_t *msg, int len)
     case T30_CTR:
         /* Valid response to a CTC received */
         /* T.30 says we change back to long training here */
-        s->short_train = FALSE;
+        s->short_train = false;
         /* Initiate resending of the remainder of the frames. */
         set_state(s, T30_STATE_IV);
         queue_phase(s, T30_PHASE_C_ECM_TX);
@@ -4374,7 +4379,7 @@ static void process_rx_control_msg(t30_state_t *s, const uint8_t *msg, int len)
     /* We should only get good frames here. */
     print_frame(s, "Rx: ", msg, len);
     if (s->real_time_frame_handler)
-        s->real_time_frame_handler(s, s->real_time_frame_user_data, TRUE, msg, len);
+        s->real_time_frame_handler(s, s->real_time_frame_user_data, true, msg, len);
 
     if ((msg[1] & 0x10) == 0)
     {
@@ -4656,61 +4661,76 @@ static void queue_phase(t30_state_t *s, int phase)
     if (s->rx_signal_present)
     {
         /* We need to wait for that signal to go away */
+        if (s->next_phase != T30_PHASE_IDLE)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
+            /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next
+               phase */
+            if (s->send_hdlc_handler)
+                s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
+        }
         s->next_phase = phase;
     }
     else
     {
+        /* We don't need to queue the new phase. We can change to it immediately. */
         set_phase(s, phase);
-        s->next_phase = T30_PHASE_IDLE;
     }
 }
 /*- End of function --------------------------------------------------------*/
 
 static void set_phase(t30_state_t *s, int phase)
 {
-    //if (phase = s->phase)
-    //    return;
+    if (phase != s->next_phase  &&  s->next_phase != T30_PHASE_IDLE)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Flushing queued phase %s\n", phase_names[s->next_phase]);
+        /* Ensure nothing has been left in the queue that was scheduled to go out in the previous next
+           phase */
+        if (s->send_hdlc_handler)
+            s->send_hdlc_handler(s->send_hdlc_user_data, NULL, -1);
+    }
     span_log(&s->logging, SPAN_LOG_FLOW, "Changing from phase %s to %s\n", phase_names[s->phase], phase_names[phase]);
     /* We may be killing a receiver before it has declared the end of the
        signal. Force the signal present indicator to off, because the
        receiver will never be able to. */
     if (s->phase != T30_PHASE_A_CED  &&  s->phase != T30_PHASE_A_CNG)
-        s->rx_signal_present = FALSE;
-    s->rx_trained = FALSE;
-    s->rx_frame_received = FALSE;
+        s->rx_signal_present = false;
+    s->rx_trained = false;
+    s->rx_frame_received = false;
     s->phase = phase;
+    s->next_phase = T30_PHASE_IDLE;
     switch (phase)
     {
     case T30_PHASE_A_CED:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, false, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CED, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CED, 0, false, false);
         break;
     case T30_PHASE_A_CNG:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, false, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CNG, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_CNG, 0, false, false);
         break;
     case T30_PHASE_B_RX:
     case T30_PHASE_D_RX:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_V21, 300, false, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, false, false);
         break;
     case T30_PHASE_B_TX:
     case T30_PHASE_D_TX:
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
             s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
-            s->far_end_detected = TRUE;
+            s->far_end_detected = true;
         }
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_V21, 300, FALSE, TRUE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_V21, 300, false, true);
         break;
     case T30_PHASE_C_NON_ECM_RX:
         if (s->set_rx_type_handler)
@@ -4718,11 +4738,11 @@ static void set_phase(t30_state_t *s, int phase)
             /* Momentarily stop the receive modem, so the next change is forced to happen. If we don't do this
                an HDLC message on the slow modem, which has disabled the fast modem, will prevent the same
                fast modem from restarting. */
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
-            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
+            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, false);
         }
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, false, false);
         break;
     case T30_PHASE_C_NON_ECM_TX:
         /* Pause before switching from anything to phase C */
@@ -4734,24 +4754,24 @@ static void set_phase(t30_state_t *s, int phase)
             /* Momentarily stop the receive modem, so the next change is forced to happen. If we don't do this
                an HDLC message on the slow modem, which has disabled the fast modem, will prevent the same
                fast modem from restarting. */
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         }
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, false);
         break;
     case T30_PHASE_C_ECM_RX:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, TRUE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, true);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_NONE, 0, false, false);
         break;
     case T30_PHASE_C_ECM_TX:
         /* Pause before switching from anything to phase C */
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, TRUE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, fallback_sequence[s->current_fallback].modem_type, fallback_sequence[s->current_fallback].bit_rate, s->short_train, true);
         break;
     case T30_PHASE_E:
         /* Send a little silence before ending things, to ensure the
@@ -4761,15 +4781,15 @@ static void set_phase(t30_state_t *s, int phase)
         s->tcf_current_zeros = 0;
         s->tcf_most_zeros = 0;
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_NONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_PAUSE, 0, FINAL_FLUSH_TIME, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_PAUSE, 0, FINAL_FLUSH_TIME, false);
         break;
     case T30_PHASE_CALL_FINISHED:
         if (s->set_rx_type_handler)
-            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_DONE, 0, FALSE, FALSE);
+            s->set_rx_type_handler(s->set_rx_type_user_data, T30_MODEM_DONE, 0, false, false);
         if (s->set_tx_type_handler)
-            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_DONE, 0, FALSE, FALSE);
+            s->set_tx_type_handler(s->set_tx_type_user_data, T30_MODEM_DONE, 0, false, false);
         break;
     }
 }
@@ -4816,9 +4836,9 @@ static void repeat_last_command(t30_state_t *s)
     switch (s->state)
     {
     case T30_STATE_R:
-        s->dis_received = FALSE;
+        s->dis_received = false;
         queue_phase(s, T30_PHASE_B_TX);
-        send_dis_or_dtc_sequence(s, TRUE);
+        send_dis_or_dtc_sequence(s, true);
         break;
     case T30_STATE_III_Q_MCF:
         queue_phase(s, T30_PHASE_D_TX);
@@ -4848,7 +4868,7 @@ static void repeat_last_command(t30_state_t *s)
         break;
     case T30_STATE_D:
         queue_phase(s, T30_PHASE_B_TX);
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_STATE_F_FTT:
         queue_phase(s, T30_PHASE_B_TX);
@@ -4856,13 +4876,13 @@ static void repeat_last_command(t30_state_t *s)
         break;
     case T30_STATE_F_CFR:
         queue_phase(s, T30_PHASE_B_TX);
-        send_cfr_sequence(s, TRUE);
+        send_cfr_sequence(s, true);
         break;
     case T30_STATE_D_POST_TCF:
         /* Need to send the whole training thing again */
-        s->short_train = FALSE;
+        s->short_train = false;
         queue_phase(s, T30_PHASE_B_TX);
-        send_dcs_sequence(s, TRUE);
+        send_dcs_sequence(s, true);
         break;
     case T30_STATE_F_POST_RCP_RNR:
         /* Just ignore */
@@ -5017,6 +5037,14 @@ static void timer_t1_expired(t30_state_t *s)
 }
 /*- End of function --------------------------------------------------------*/
 
+static void timer_t1a_expired(t30_state_t *s)
+{
+    span_log(&s->logging, SPAN_LOG_FLOW, "T1A expired in phase %s, state %d. An HDLC frame lasted too long.\n", phase_names[s->phase], s->state);
+    t30_set_status(s, T30_ERR_HDLC_CARRIER);
+    disconnect(s);
+}
+/*- End of function --------------------------------------------------------*/
+
 static void timer_t2_expired(t30_state_t *s)
 {
     if (s->timer_t2_t4_is != TIMER_IS_T2B)
@@ -5038,8 +5066,8 @@ static void timer_t2_expired(t30_state_t *s)
             span_log(&s->logging, SPAN_LOG_FLOW, "Returning to phase B after %s\n", t30_frametype(s->next_rx_step));
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
-            s->dis_received = FALSE;
-            send_dis_or_dtc_sequence(s, TRUE);
+            s->dis_received = false;
+            send_dis_or_dtc_sequence(s, true);
             return;
         }
         break;
@@ -5085,14 +5113,6 @@ static void timer_t2_expired(t30_state_t *s)
     }
     queue_phase(s, T30_PHASE_B_TX);
     start_receiving_document(s);
-}
-/*- End of function --------------------------------------------------------*/
-
-static void timer_t1a_expired(t30_state_t *s)
-{
-    span_log(&s->logging, SPAN_LOG_FLOW, "T1A expired in phase %s, state %d. An HDLC frame lasted too long.\n", phase_names[s->phase], s->state);
-    t30_set_status(s, T30_ERR_HDLC_CARRIER);
-    disconnect(s);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -5245,7 +5265,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
     case SIG_STATUS_TRAINING_FAILED:
-        s->rx_trained = FALSE;
+        s->rx_trained = false;
         break;
     case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
@@ -5253,16 +5273,16 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
         s->tcf_test_bits = 0;
         s->tcf_current_zeros = 0;
         s->tcf_most_zeros = 0;
-        s->rx_signal_present = TRUE;
-        s->rx_trained = TRUE;
+        s->rx_signal_present = true;
+        s->rx_trained = true;
         timer_t2_t4_stop(s);
         break;
     case SIG_STATUS_CARRIER_UP:
         break;
     case SIG_STATUS_CARRIER_DOWN:
         was_trained = s->rx_trained;
-        s->rx_signal_present = FALSE;
-        s->rx_trained = FALSE;
+        s->rx_signal_present = false;
+        s->rx_trained = false;
         switch (s->state)
         {
         case T30_STATE_F_TCF:
@@ -5290,11 +5310,11 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
                 else
                 {
                     /* The training went OK */
-                    s->short_train = TRUE;
+                    s->short_train = true;
                     rx_start_page(s);
                     set_phase(s, T30_PHASE_B_TX);
                     set_state(s, T30_STATE_F_CFR);
-                    send_cfr_sequence(s, TRUE);
+                    send_cfr_sequence(s, true);
                 }
             }
             break;
@@ -5324,10 +5344,7 @@ static void t30_non_ecm_rx_status(void *user_data, int status)
             break;
         }
         if (s->next_phase != T30_PHASE_IDLE)
-        {
             set_phase(s, s->next_phase);
-            s->next_phase = T30_PHASE_IDLE;
-        }
         break;
     default:
         span_log(&s->logging, SPAN_LOG_WARNING, "Unexpected non-ECM rx status - %d!\n", status);
@@ -5574,15 +5591,15 @@ static void t30_hdlc_rx_status(void *user_data, int status)
     case SIG_STATUS_TRAINING_IN_PROGRESS:
         break;
     case SIG_STATUS_TRAINING_FAILED:
-        s->rx_trained = FALSE;
+        s->rx_trained = false;
         break;
     case SIG_STATUS_TRAINING_SUCCEEDED:
         /* The modem is now trained */
-        s->rx_signal_present = TRUE;
-        s->rx_trained = TRUE;
+        s->rx_signal_present = true;
+        s->rx_trained = true;
         break;
     case SIG_STATUS_CARRIER_UP:
-        s->rx_signal_present = TRUE;
+        s->rx_signal_present = true;
         switch (s->timer_t2_t4_is)
         {
         case TIMER_IS_T2B:
@@ -5597,8 +5614,8 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         break;
     case SIG_STATUS_CARRIER_DOWN:
         was_trained = s->rx_trained;
-        s->rx_signal_present = FALSE;
-        s->rx_trained = FALSE;
+        s->rx_signal_present = false;
+        s->rx_trained = false;
         /* If a phase change has been queued to occur after the receive signal drops,
            its time to change. */
         if (s->state == T30_STATE_F_DOC_ECM)
@@ -5629,7 +5646,6 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         {
             /* The appropriate timer for the next phase should already be in progress */
             set_phase(s, s->next_phase);
-            s->next_phase = T30_PHASE_IDLE;
         }
         else
         {
@@ -5651,7 +5667,7 @@ static void t30_hdlc_rx_status(void *user_data, int status)
         if (!s->far_end_detected  &&  s->timer_t0_t1 > 0)
         {
             s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T1);
-            s->far_end_detected = TRUE;
+            s->far_end_detected = true;
             if (s->phase == T30_PHASE_A_CED  ||  s->phase == T30_PHASE_A_CNG)
                 set_phase(s, T30_PHASE_B_RX);
         }
@@ -5746,7 +5762,7 @@ SPAN_DECLARE_NONSTD(void) t30_hdlc_accept(void *user_data, const uint8_t *msg, i
         timer_t2_t4_stop(s);
         return;
     }
-    s->rx_frame_received = TRUE;
+    s->rx_frame_received = true;
     /* Cancel the command or response timer (if one is running) */
     timer_t2_t4_stop(s);
     process_rx_control_msg(s, msg, len);
@@ -5770,11 +5786,11 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             span_log(&s->logging, SPAN_LOG_FLOW, "Starting answer mode\n");
             set_phase(s, T30_PHASE_B_TX);
             timer_t2_start(s);
-            s->dis_received = FALSE;
-            send_dis_or_dtc_sequence(s, TRUE);
+            s->dis_received = false;
+            send_dis_or_dtc_sequence(s, true);
             break;
         case T30_STATE_R:
-            if (send_dis_or_dtc_sequence(s, FALSE))
+            if (send_dis_or_dtc_sequence(s, false))
             {
                 /* Wait for an acknowledgement. */
                 set_phase(s, T30_PHASE_B_RX);
@@ -5907,13 +5923,13 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             }
             break;
         case T30_STATE_D:
-            if (send_dcs_sequence(s, FALSE))
+            if (send_dcs_sequence(s, false))
             {
                 if ((s->iaf & T30_IAF_MODE_NO_TCF))
                 {
                     /* Skip the trainability test */
                     s->retries = 0;
-                    s->short_train = TRUE;
+                    s->short_train = true;
                     if (s->error_correcting_mode)
                     {
                         set_state(s, T30_STATE_IV);
@@ -5929,7 +5945,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
                 {
                     /* Do the trainability test */
                     /* TCF is always sent with long training */
-                    s->short_train = FALSE;
+                    s->short_train = false;
                     set_state(s, T30_STATE_D_TCF);
                     set_phase(s, T30_PHASE_C_NON_ECM_TX);
                 }
@@ -6032,7 +6048,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         default:
             /* Cancel any receive timeout, and declare that a receive signal is present,
                since the front end is explicitly telling us we have seen something. */
-            s->rx_signal_present = TRUE;
+            s->rx_signal_present = true;
             timer_t2_t4_stop(s);
             break;
         }
@@ -6215,9 +6231,9 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     s->phase = T30_PHASE_IDLE;
     s->next_phase = T30_PHASE_IDLE;
     s->current_fallback = 0;
-    s->rx_signal_present = FALSE;
-    s->rx_trained = FALSE;
-    s->rx_frame_received = FALSE;
+    s->rx_signal_present = false;
+    s->rx_trained = false;
+    s->rx_frame_received = false;
     s->current_status = T30_ERR_OK;
     s->ppr_count = 0;
     s->ecm_progress = 0;
@@ -6232,8 +6248,8 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
     s->tx_page_number = 0;
     s->rtn_events = 0;
     s->rtp_events = 0;
-    s->local_interrupt_pending = FALSE;
-    s->far_end_detected = FALSE;
+    s->local_interrupt_pending = false;
+    s->far_end_detected = false;
     s->timer_t0_t1 = ms_to_samples(DEFAULT_TIMER_T0);
     if (s->calling_party)
     {

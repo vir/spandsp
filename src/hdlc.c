@@ -33,6 +33,11 @@
 #include <inttypes.h>
 #include <string.h>
 #include <stdio.h>
+#if defined(HAVE_STDBOOL_H)
+#include <stdbool.h>
+#else
+#include "spandsp/stdbool.h"
+#endif
 
 #include "spandsp/telephony.h"
 #include "spandsp/async.h"
@@ -46,7 +51,7 @@ static void report_status_change(hdlc_rx_state_t *s, int status)
     if (s->status_handler)
         s->status_handler(s->status_user_data, status);
     else if (s->frame_handler)
-        s->frame_handler(s->frame_user_data, NULL, status, TRUE);
+        s->frame_handler(s->frame_user_data, NULL, status, true);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -62,7 +67,7 @@ static void rx_special_condition(hdlc_rx_state_t *s, int status)
         s->len = 0;
         s->num_bits = 0;
         s->flags_seen = 0;
-        s->framing_ok_announced = FALSE;
+        s->framing_ok_announced = false;
         /* Fall through */
     case SIG_STATUS_TRAINING_IN_PROGRESS:
     case SIG_STATUS_TRAINING_FAILED:
@@ -81,7 +86,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
 {
     if (s->octet_count_report_interval == 0)
         return;
-        
+
     /* If we are not in octet counting mode, we start it.
        If we are in octet counting mode, we update it. */
     if (s->octet_counting_mode)
@@ -94,7 +99,7 @@ static __inline__ void octet_set_and_count(hdlc_rx_state_t *s)
     }
     else
     {
-        s->octet_counting_mode = TRUE;
+        s->octet_counting_mode = true;
         s->octet_count = s->octet_count_report_interval;
     }
 }
@@ -139,7 +144,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
     {
         /* Hit HDLC flag */
         /* A flag clears octet counting */
-        s->octet_counting_mode = FALSE;
+        s->octet_counting_mode = false;
         if (s->flags_seen >= s->framing_ok_threshold)
         {
             /* We may have a frame, or we may have back to back flags */
@@ -155,7 +160,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         s->rx_bytes += s->len - s->crc_bytes;
                         s->len -= s->crc_bytes;
                         if (s->frame_handler)
-                            s->frame_handler(s->frame_user_data, s->buffer, s->len, TRUE);
+                            s->frame_handler(s->frame_user_data, s->buffer, s->len, true);
                     }
                     else
                     {
@@ -164,7 +169,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         {
                             s->len -= s->crc_bytes;
                             if (s->frame_handler)
-                                s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
+                                s->frame_handler(s->frame_user_data, s->buffer, s->len, false);
                         }
                     }
                 }
@@ -180,7 +185,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
                         else
                             s->len = 0;
                         if (s->frame_handler)
-                            s->frame_handler(s->frame_user_data, s->buffer, s->len, FALSE);
+                            s->frame_handler(s->frame_user_data, s->buffer, s->len, false);
                     }
                     s->rx_length_errors++;
                 }
@@ -205,7 +210,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *s)
             if (++s->flags_seen >= s->framing_ok_threshold  &&  !s->framing_ok_announced)
             {
                 report_status_change(s, SIG_STATUS_FRAMING_OK);
-                s->framing_ok_announced = TRUE;
+                s->framing_ok_announced = true;
             }
         }
     }
@@ -305,6 +310,20 @@ SPAN_DECLARE(void) hdlc_rx_set_octet_counting_report_interval(hdlc_rx_state_t *s
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) hdlc_rx_restart(hdlc_rx_state_t *s)
+{
+    s->framing_ok_announced = false;
+    s->flags_seen = 0;
+    s->raw_bit_stream = 0;
+    s->byte_in_progress = 0;
+    s->num_bits = 0;
+    s->octet_counting_mode = false;
+    s->octet_count = 0;
+    s->len = 0;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(hdlc_rx_state_t *) hdlc_rx_init(hdlc_rx_state_t *s,
                                              int crc32,
                                              int report_bad_frames,
@@ -369,9 +388,9 @@ SPAN_DECLARE(int) hdlc_rx_get_stats(hdlc_rx_state_t *s,
 
 SPAN_DECLARE(int) hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t len)
 {
-    if (len <= 0)
+    if (len == 0)
     {
-        s->tx_end = TRUE;
+        s->tx_end = true;
         return 0;
     }
     if (s->len + len > s->max_frame_len)
@@ -388,7 +407,7 @@ SPAN_DECLARE(int) hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t
         if (s->len)
             return -1;
     }
-    memcpy(s->buffer + s->len, frame, len);
+    memcpy(&s->buffer[s->len], frame, len);
     if (s->crc_bytes == 2)
         s->crc = crc_itu16_calc(frame, len, (uint16_t) s->crc);
     else
@@ -397,7 +416,7 @@ SPAN_DECLARE(int) hdlc_tx_frame(hdlc_tx_state_t *s, const uint8_t *frame, size_t
         s->len += len;
     else
         s->len = len;
-    s->tx_end = FALSE;
+    s->tx_end = false;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -412,8 +431,8 @@ SPAN_DECLARE(int) hdlc_tx_flags(hdlc_tx_state_t *s, int len)
         s->flag_octets += -len;
     else
         s->flag_octets = len;
-    s->report_flag_underflow = TRUE;
-    s->tx_end = FALSE;
+    s->report_flag_underflow = true;
+    s->tx_end = false;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -452,7 +471,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
         /* We are in a timed flag section (preamble, inter frame gap, etc.) */
         if (--s->flag_octets <= 0  &&  s->report_flag_underflow)
         {
-            s->report_flag_underflow = FALSE;
+            s->report_flag_underflow = false;
             if (s->len == 0)
             {
                 /* The timed flags have finished, there is nothing else queued to go,
@@ -465,7 +484,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
         {
             s->abort_octets = 0;
             return 0x7F;
-        }   
+        }
         return s->idle_octet;
     }
     if (s->len)
@@ -508,7 +527,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
                     s->crc = 0xFFFFFFFF;
                 /* Report the underflow now. If there are timed flags still in progress, loading the
                    next frame right now will be harmless. */
-                s->report_flag_underflow = FALSE;
+                s->report_flag_underflow = false;
                 if (s->underflow_handler)
                     s->underflow_handler(s->user_data);
                 /* Make sure we finish off with at least one flag octet, if the underflow report did not result
@@ -539,7 +558,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_byte(hdlc_tx_state_t *s)
     /* Untimed idling on flags */
     if (s->tx_end)
     {
-        s->tx_end = FALSE;
+        s->tx_end = false;
         return SIG_STATUS_END_OF_DATA;
     }
     return s->idle_octet;
@@ -558,7 +577,7 @@ SPAN_DECLARE_NONSTD(int) hdlc_tx_get_bit(hdlc_tx_state_t *s)
     }
     s->bits--;
     txbit = (s->byte >> s->bits) & 0x01;
-    return  txbit;
+    return txbit;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -583,6 +602,24 @@ SPAN_DECLARE(void) hdlc_tx_set_max_frame_len(hdlc_tx_state_t *s, size_t max_len)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) hdlc_tx_restart(hdlc_tx_state_t *s)
+{
+    s->octets_in_progress = 0;
+    s->num_bits = 0;
+    s->idle_octet = 0x7E;
+    s->flag_octets = 0;
+    s->abort_octets = 0;
+    s->report_flag_underflow = false;
+    s->len = 0;
+    s->pos = 0;
+    s->crc = 0;
+    s->byte = 0;
+    s->bits = 0;
+    s->tx_end = false;
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
                                              int crc32,
                                              int inter_frame_flags,
@@ -596,7 +633,6 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
             return NULL;
     }
     memset(s, 0, sizeof(*s));
-    s->idle_octet = 0x7E;
     s->underflow_handler = handler;
     s->user_data = user_data;
     s->inter_frame_flags = (inter_frame_flags < 1)  ?  1  :  inter_frame_flags;
@@ -610,6 +646,7 @@ SPAN_DECLARE(hdlc_tx_state_t *) hdlc_tx_init(hdlc_tx_state_t *s,
         s->crc_bytes = 2;
         s->crc = 0xFFFF;
     }
+    s->idle_octet = 0x7E;
     s->progressive = progressive;
     s->max_frame_len = HDLC_MAXFRAME_LEN;
     return s;

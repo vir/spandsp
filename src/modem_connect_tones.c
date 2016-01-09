@@ -428,7 +428,7 @@ static void v21_put_bit(void *user_data, int bit)
                     s->flags_seen = 0;
                 if (++s->flags_seen >= HDLC_FRAMING_OK_THRESHOLD  &&  !s->framing_ok_announced)
                 {
-                    report_tone_state(s, MODEM_CONNECT_TONES_FAX_PREAMBLE, lfastrintf(fsk_rx_signal_power(&(s->v21rx))));
+                    report_tone_state(s, MODEM_CONNECT_TONES_FAX_PREAMBLE, lfastrintf(fsk_rx_signal_power(&s->v21rx)));
                     s->framing_ok_announced = TRUE;
                 }
             }
@@ -501,12 +501,12 @@ SPAN_DECLARE_NONSTD(int) modem_connect_tones_rx(modem_connect_tones_rx_state_t *
         break;
     case MODEM_CONNECT_TONES_FAX_PREAMBLE:
         /* Ignore any CED tone, and just look for V.21 preamble. */
-        fsk_rx(&(s->v21rx), amp, len);
+        fsk_rx(&s->v21rx, amp, len);
         break;
     case MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE:
         /* Also look for V.21 preamble. A lot of machines don't send the 2100Hz burst. It
            might also not be seen all the way through the channel, due to switching delays. */
-        fsk_rx(&(s->v21rx), amp, len);
+        fsk_rx(&s->v21rx, amp, len);
         /* Now fall through and look for a 2100Hz tone */
     case MODEM_CONNECT_TONES_ANS:
         for (i = 0;  i < len;  i++)
@@ -719,8 +719,8 @@ SPAN_DECLARE(modem_connect_tones_rx_state_t *) modem_connect_tones_rx_init(modem
     {
     case MODEM_CONNECT_TONES_FAX_PREAMBLE:
     case MODEM_CONNECT_TONES_FAX_CED_OR_PREAMBLE:
-        fsk_rx_init(&(s->v21rx), &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, v21_put_bit, s);
-        fsk_rx_signal_cutoff(&(s->v21rx), -45.5f);
+        fsk_rx_init(&s->v21rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, v21_put_bit, s);
+        fsk_rx_signal_cutoff(&s->v21rx, -45.5f);
         break;
     case MODEM_CONNECT_TONES_ANS_PR:
     case MODEM_CONNECT_TONES_ANSAM:

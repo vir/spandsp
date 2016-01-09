@@ -83,7 +83,7 @@ EXTRA_DIST = floating_fudge.h \
              spandsp/private/README \
              spandsp/version.h.in
 
-INCLUDES = -I$(top_builddir)
+AM_CPPFLAGS = -I$(top_builddir)
 
 lib_LTLIBRARIES = libspandsp.la
 
@@ -220,6 +220,7 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
                          spandsp/queue.h \
                          spandsp/saturated.h \
                          spandsp/schedule.h \
+                         spandsp/stdbool.h \
                          spandsp/sig_tone.h \
                          spandsp/silence_gen.h \
                          spandsp/super_tone_rx.h \
