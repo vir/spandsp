@@ -787,6 +787,22 @@ SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time
 }
 /*- End of function --------------------------------------------------------*/
 
+#if 0
+SPAN_DECLARE(void) t30_set_document_get_handler(t30_state_t *s, t30_document_get_handler_t *handler, void *user_data)
+{
+    s->document_get_handler = handler;
+    s->document_get_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) t30_set_document_put_handler(t30_state_t *s, t30_document_put_handler_t *handler, void *user_data)
+{
+    s->document_put_handler = handler;
+    s->document_put_user_data = user_data;
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
 SPAN_DECLARE(logging_state_t *) t30_get_logging_state(t30_state_t *s)
 {
     return &s->logging;

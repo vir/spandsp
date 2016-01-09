@@ -133,6 +133,17 @@ struct t30_state_s
     /*! \brief An opaque pointer passed to the transmitted HDLC frame handler. */
     void *send_hdlc_user_data;
 
+#if 0
+    /*! \brief The document send handler. */
+    t30_document_get_handler_t *document_get_handler;
+    /*! \brief An opaque pointer passed to the document send handler. */
+    void *document_get_user_data;
+    /*! \brief The document delivery handler. */
+    t30_document_put_handler_t *document_put_handler;
+    /*! \brief An opaque pointer passed to the document delivery handler. */
+    void *document_put_user_data;
+#endif
+
     /*! \brief The DIS code for the minimum scan row time we require. This is usually 0ms,
         but if we are trying to simulate another type of FAX machine, we may need a non-zero
         value here. */

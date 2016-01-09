@@ -538,6 +538,12 @@ SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler
     \param user_data An opaque pointer passed to the callback function. */
 SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t *handler, void *user_data);
 
+#if 0
+SPAN_DECLARE(void) t30_set_document_get_handler(t30_state_t *s, t30_document_get_handler_t handler, void *user_data);
+
+SPAN_DECLARE(void) t30_set_document_put_handler(t30_state_t *s, t30_document_put_handler_t handler, void *user_data);
+#endif
+
 /*! Get a pointer to the logging context associated with a T.30 context.
     \brief Get a pointer to the logging context associated with a T.30 context.
     \param s The T.30 context.
