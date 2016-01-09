@@ -65,13 +65,22 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v17rx.h"
 
-#include "v17_v32bis_tx_constellation_maps.h"
-#include "v17_v32bis_rx_constellation_maps.h"
-#if defined(SPANDSP_USE_FIXED_POINT)
+//#if defined (SPANDSP_USE_FIXED_POINT)
+//#define SPANDSP_USE_FIXED_POINTx
+//#endif
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+#define FP_SCALE(x)                     FP_Q_4_12(x)
+#define FP_FACTOR                       4096
+#define FP_SHIFT_FACTOR                 12
 #include "v17_v32bis_rx_fixed_rrc.h"
 #else
+#define FP_SCALE(x)                     (x)
 #include "v17_v32bis_rx_floating_rrc.h"
 #endif
+
+#include "v17_v32bis_tx_constellation_maps.h"
+#include "v17_v32bis_rx_constellation_maps.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f
@@ -126,13 +135,13 @@ enum
 #define ALPHA                           0.99f
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-#define SYNC_LOW_BAND_EDGE_COEFF_0      ((int)(FP_FACTOR*(2.0f*ALPHA*COS_LOW_BAND_EDGE)))
-#define SYNC_LOW_BAND_EDGE_COEFF_1      ((int)(FP_FACTOR*(-ALPHA*ALPHA)))
-#define SYNC_LOW_BAND_EDGE_COEFF_2      ((int)(FP_FACTOR*(-ALPHA*SIN_LOW_BAND_EDGE)))
-#define SYNC_HIGH_BAND_EDGE_COEFF_0     ((int)(FP_FACTOR*(2.0f*ALPHA*COS_HIGH_BAND_EDGE)))
-#define SYNC_HIGH_BAND_EDGE_COEFF_1     ((int)(FP_FACTOR*(-ALPHA*ALPHA)))
-#define SYNC_HIGH_BAND_EDGE_COEFF_2     ((int)(FP_FACTOR*(-ALPHA*SIN_HIGH_BAND_EDGE)))
-#define SYNC_MIXED_EDGES_COEFF_3        ((int)(FP_FACTOR*(-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))))
+#define SYNC_LOW_BAND_EDGE_COEFF_0      FP_Q_6_10(2.0f*ALPHA*COS_LOW_BAND_EDGE)
+#define SYNC_LOW_BAND_EDGE_COEFF_1      FP_Q_6_10(-ALPHA*ALPHA)
+#define SYNC_LOW_BAND_EDGE_COEFF_2      FP_Q_6_10(-ALPHA*SIN_LOW_BAND_EDGE)
+#define SYNC_HIGH_BAND_EDGE_COEFF_0     FP_Q_6_10(2.0f*ALPHA*COS_HIGH_BAND_EDGE)
+#define SYNC_HIGH_BAND_EDGE_COEFF_1     FP_Q_6_10(-ALPHA*ALPHA)
+#define SYNC_HIGH_BAND_EDGE_COEFF_2     FP_Q_6_10(-ALPHA*SIN_HIGH_BAND_EDGE)
+#define SYNC_MIXED_EDGES_COEFF_3        FP_Q_6_10(-ALPHA*ALPHA*(SIN_HIGH_BAND_EDGE*COS_LOW_BAND_EDGE - SIN_LOW_BAND_EDGE*COS_HIGH_BAND_EDGE))))
 #else
 #define SYNC_LOW_BAND_EDGE_COEFF_0      (2.0f*ALPHA*COS_LOW_BAND_EDGE)
 #define SYNC_LOW_BAND_EDGE_COEFF_1      (-ALPHA*ALPHA)
@@ -145,21 +154,15 @@ enum
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
 static const int constellation_spacing[4] =
-{
-    ((int)(FP_FACTOR*1.414f),
-    ((int)(FP_FACTOR*2.0f)},
-    ((int)(FP_FACTOR*2.828f)},
-    ((int)(FP_FACTOR*4.0f)},
-};
 #else
 static const float constellation_spacing[4] =
-{
-    1.414f,
-    2.0f,
-    2.828f,
-    4.0f
-};
 #endif
+{
+    FP_SCALE(1.414f),
+    FP_SCALE(2.0f),
+    FP_SCALE(2.828f),
+    FP_SCALE(4.0f)
+};
 
 SPAN_DECLARE(float) v17_rx_carrier_frequency(v17_rx_state_t *s)
 {
@@ -239,13 +242,17 @@ static void equalizer_reset(v17_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINTx)
+    static const complexi16_t x = {FP_SCALE(3.0f), FP_SCALE(0.0f)};
+
     cvec_zeroi16(s->eq_coeff, V17_EQUALIZER_LEN);
-    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = complex_seti16(3*FP_FACTOR, 0);
+    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
     cvec_zeroi16(s->eq_buf, V17_EQUALIZER_LEN);
     s->eq_delta = 32768.0f*EQUALIZER_DELTA/V17_EQUALIZER_LEN;
 #else
+    static const complexf_t x = {3.0f, 0.0f};
+
     cvec_zerof(s->eq_coeff, V17_EQUALIZER_LEN);
-    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = complex_setf(3.0f, 0.0f);
+    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
     cvec_zerof(s->eq_buf, V17_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V17_EQUALIZER_LEN;
 #endif
@@ -258,12 +265,23 @@ static void equalizer_reset(v17_rx_state_t *s)
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
 static __inline__ complexi16_t equalizer_get(v17_rx_state_t *s)
+{
+    complexi32_t zz;
+    complexi16_t z;
+
+    /* Get the next equalized value. */
+    zz = cvec_circular_dot_prodi16(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step);
+    z.re = zz.re >> FP_SHIFT_FACTOR;
+    z.im = zz.im >> FP_SHIFT_FACTOR;
+    return z;
+}
 #else
 static __inline__ complexf_t equalizer_get(v17_rx_state_t *s)
-#endif
 {
+    /* Get the next equalized value. */
     return cvec_circular_dot_prodf(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step);
 }
+#endif
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -309,19 +327,36 @@ static int descramble(v17_rx_state_t *s, int in_bit)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void track_carrier(v17_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static __inline__ void track_carrier(v17_rx_state_t *s, const complexi16_t *z, const complexi16_t *target)
+#else
+static __inline__ void track_carrier(v17_rx_state_t *s, const complexf_t *z, const complexf_t *target)
+#endif
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    int32_t error;
+#else
     float error;
+#endif
 
     /* For small errors the imaginary part of the difference between the actual and the target
        positions is proportional to the phase error, for any particular target. However, the
        different amplitudes of the various target positions scale things. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    error = z->im*(target->re >> FP_SHIFT_FACTOR) - z->re*(target->im >> FP_SHIFT_FACTOR);
+#else
     error = z->im*target->re - z->re*target->im;
-    
+#endif
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    s->carrier_phase_rate += ((s->carrier_track_i*error) >> FP_SHIFT_FACTOR);
+    s->carrier_phase += ((s->carrier_track_p*error) >> FP_SHIFT_FACTOR);
+#else
     s->carrier_phase_rate += (int32_t) (s->carrier_track_i*error);
     s->carrier_phase += (int32_t) (s->carrier_track_p*error);
     //span_log(&s->logging, SPAN_LOG_FLOW, "Im = %15.5f   f = %15.5f\n", error, dds_frequencyf(s->carrier_phase_rate));
     //printf("XXX Im = %15.5f   f = %15.5f   %f %f %f %f (%f %f)\n", error, dds_frequencyf(s->carrier_phase_rate), target->re, target->im, z->re, z->im, s->carrier_track_i, s->carrier_track_p);
+#endif
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -348,7 +383,7 @@ static __inline__ void put_bit(v17_rx_state_t *s, int bit)
 /*- End of function --------------------------------------------------------*/
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
-static __inline__ uint32_t dist_sq(const complexi_t *x, const complexi_t *y)
+static __inline__ uint32_t dist_sq(const complexi32_t *x, const complexi32_t *y)
 {
     return (x->re - y->re)*(x->re - y->re) + (x->im - y->im)*(x->im - y->im);
 }
@@ -361,7 +396,11 @@ static __inline__ float dist_sq(const complexf_t *x, const complexf_t *y)
 /*- End of function --------------------------------------------------------*/
 #endif
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static int decode_baud(v17_rx_state_t *s, complexi16_t *z)
+#else
 static int decode_baud(v17_rx_state_t *s, complexf_t *z)
+#endif
 {
     static const uint8_t v32bis_4800_differential_decoder[4][4] =
     {
@@ -435,7 +474,7 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
        to the target, with different patterns in the last 3 bits. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
     min = 0xFFFFFFFF;
-    zi = complex_seti(z->re*DIST_FACTOR, z->im*DIST_FACTOR);
+    zi = complex_seti32(z->re*DIST_FACTOR, z->im*DIST_FACTOR);
 #else
     min = 9999999.0f;
 #endif
@@ -444,8 +483,8 @@ static int decode_baud(v17_rx_state_t *s, complexf_t *z)
     {
         nearest = constel_maps[s->space_map][re][im][i];
 #if defined(SPANDSP_USE_FIXED_POINTx)
-        ci = complex_seti(s->constellation[nearest].re*DIST_FACTOR,
-                          s->constellation[nearest].im*DIST_FACTOR);
+        ci = complex_seti32(s->constellation[nearest].re*DIST_FACTOR,
+                            s->constellation[nearest].im*DIST_FACTOR);
         distances[i] = dist_sq(&ci, &zi);
 #else
         distances[i] = dist_sq(&s->constellation[nearest], z);
@@ -617,12 +656,16 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
 
 static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    static const complexi16_t cdba[4] =
+#else
     static const complexf_t cdba[4] =
+#endif
     {
-        { 6.0f,  2.0f},
-        {-2.0f,  6.0f},
-        { 2.0f, -6.0f},
-        {-6.0f, -2.0f}
+        {FP_SCALE( 6.0f), FP_SCALE( 2.0f)},
+        {FP_SCALE(-2.0f), FP_SCALE( 6.0f)},
+        {FP_SCALE( 2.0f), FP_SCALE(-6.0f)},
+        {FP_SCALE(-6.0f), FP_SCALE(-2.0f)}
     };
     complexf_t z;
     complexf_t zz;
@@ -631,7 +674,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
     static const complexi16_t zero = {0, 0};
 #else
     const complexf_t *target;
-    static const complexf_t zero = {0, 0};
+    static const complexf_t zero = {0.0f, 0.0f};
 #endif
     float p;
     int bit;
@@ -1129,7 +1172,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
     complexf_t z;
     complexf_t zz;
     complexf_t sample;
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
     int32_t vi;
 #endif
 #if defined(SPANDSP_USE_FIXED_POINTx)
@@ -1157,7 +1200,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
             step = RX_PULSESHAPER_COEFF_SETS - 1;
         if (step < 0)
             step += RX_PULSESHAPER_COEFF_SETS;
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
         vi = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V17_RX_FILTER_STEPS, s->rrc_filter_step);
         //sample.re = (vi*(int32_t) s->agc_scaling) >> 15;
         sample.re = vi*s->agc_scaling;
@@ -1190,7 +1233,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
             if (step > RX_PULSESHAPER_COEFF_SETS - 1)
                 step = RX_PULSESHAPER_COEFF_SETS - 1;
             s->eq_put_step += RX_PULSESHAPER_COEFF_SETS*10/(3*2);
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
             vi = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_im[step], V17_RX_FILTER_STEPS, s->rrc_filter_step);
             //sample.im = (vi*(int32_t) s->agc_scaling) >> 15;
             sample.im = vi*s->agc_scaling;
@@ -1206,7 +1249,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx(v17_rx_state_t *s, const int16_t amp[], int len)
 #endif
             process_half_baud(s, &zz);
         }
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
         dds_advance(&s->carrier_phase, s->carrier_phase_rate);
 #else
         dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
@@ -1229,7 +1272,7 @@ SPAN_DECLARE_NONSTD(int) v17_rx_fillin(v17_rx_state_t *s, int len)
         return 0;
     for (i = 0;  i < len;  i++)
     {
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
         dds_advance(&s->carrier_phase, s->carrier_phase_rate);
 #else
         dds_advancef(&s->carrier_phase, s->carrier_phase_rate);
@@ -1302,7 +1345,7 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
         return -1;
     }
     s->bit_rate = bit_rate;
-#if defined(SPANDSP_USE_FIXED_POINT)
+#if defined(SPANDSP_USE_FIXED_POINTx)
     vec_zeroi16(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));
 #else
     vec_zerof(s->rrc_filter, sizeof(s->rrc_filter)/sizeof(s->rrc_filter[0]));

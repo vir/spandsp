@@ -26,29 +26,14 @@
 #if !defined(_SPANDSP_PRIVATE_T4_RX_H_)
 #define _SPANDSP_PRIVATE_T4_RX_H_
 
+#define t4_rx_state_s t4_state_s
+
 /*!
-    TIFF specific state information to go with T.4 compression or decompression handling.
+    T.4 FAX decompression metadata descriptor. This contains information about the image
+    which may be relevant to the backend, but is not relevant to the image decoding process.
 */
 typedef struct
 {
-    /*! \brief The current file name. */
-    const char *file;
-    /*! \brief The libtiff context for the current TIFF file */
-    TIFF *tiff_file;
-
-    /*! \brief The compression type for output to the TIFF file. */
-    int32_t output_compression;
-    /*! \brief The TIFF photometric setting for the current page. */
-    uint16_t photo_metric;
-    /*! \brief The TIFF fill order setting for the current page. */
-    uint16_t fill_order;
-    /*! \brief The TIFF G3 FAX options. */
-    int32_t output_t4_options;
-
-    /*! \brief The number of pages in the current image file. */
-    int pages_in_file;
-
-    /* "Background" information about the FAX, which can be stored in the image file. */
     /*! \brief The vendor of the machine which produced the file. */ 
     const char *vendor;
     /*! \brief The model of machine which produced the file. */ 
@@ -61,6 +46,32 @@ typedef struct
     const char *sub_address;
     /*! \brief The FAX DCS information, as an ASCII hex string. */ 
     const char *dcs;
+} t4_rx_metadata_t;
+
+/*!
+    TIFF specific state information to go with T.4 compression or decompression handling.
+*/
+typedef struct
+{
+    /*! \brief The current file name. */
+    const char *file;
+    /*! \brief The libtiff context for the current TIFF file */
+    TIFF *tiff_file;
+
+    /* Supporting information, like resolutions, which the backend may want. */
+    t4_rx_metadata_t metadata;
+
+    /*! \brief The compression type for output to the TIFF file. */
+    int32_t output_compression;
+    /*! \brief The TIFF photometric setting for the current page. */
+    uint16_t photo_metric;
+    /*! \brief The TIFF fill order setting for the current page. */
+    uint16_t fill_order;
+    /*! \brief The TIFF G3 FAX options. */
+    int32_t output_t4_options;
+
+    /*! \brief The number of pages in the current image file. */
+    int pages_in_file;
 
     /*! \brief The first page to transfer. -1 to start at the beginning of the file. */
     int start_page;

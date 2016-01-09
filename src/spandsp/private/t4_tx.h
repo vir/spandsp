@@ -26,6 +26,8 @@
 #if !defined(_SPANDSP_PRIVATE_T4_TX_H_)
 #define _SPANDSP_PRIVATE_T4_TX_H_
 
+#define t4_tx_state_s t4_state_s
+
 /*!
     T.4 FAX compression/decompression descriptor. This defines the working state
     for a single instance of a T.4 FAX compression or decompression channel.

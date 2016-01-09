@@ -179,7 +179,7 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     int len;
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t *coeffs;
-    complexf_t constel_point;
+    //complexf_t constel_point;
 #else
     complexf_t *coeffs;
 #endif
@@ -244,11 +244,13 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #endif
 #if defined(ENABLE_GUI)
             if (use_gui)
+            {
 #if defined(SPANDSP_USE_FIXED_POINT)
                 qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
 #else
                 qam_monitor_update_equalizer(qam_monitor, coeffs, len);
 #endif
+            }
 #endif
             update_interval = 100;
         }

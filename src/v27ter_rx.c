@@ -44,6 +44,9 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
+#include "spandsp/math_fixed.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -198,14 +201,14 @@ static void equalizer_restore(v27ter_rx_state_t *s)
 #if defined(SPANDSP_USE_FIXED_POINTx)
     cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V27TER_EQUALIZER_LEN);
     cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_LEN);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN);
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #else
     cvec_copyf(s->eq_coeff, s->eq_coeff_save, V27TER_EQUALIZER_LEN);
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #endif
 
-    s->eq_put_step = (s->bit_rate == 4800)  ?  RX_PULSESHAPER_4800_COEFF_SETS*5/2  :  RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
+    s->eq_put_step = (s->bit_rate == 4800)  ?  (RX_PULSESHAPER_4800_COEFF_SETS*5/2 - 1)  :  (RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2) - 1);
     s->eq_step = 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -214,13 +217,17 @@ static void equalizer_reset(v27ter_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
+    static const complexi16_t x = {FP_SCALE(1.414f), FP_SCALE(0.0f)};
+
     cvec_zeroi16(s->eq_coeff, V27TER_EQUALIZER_LEN);
-    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = complex_seti16(1.414f*FP_FACTOR, 0);
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = x;
     cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_LEN);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN);
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #else
+    static const complexf_t x = {1.414f, 0.0f};
+
     cvec_zerof(s->eq_coeff, V27TER_EQUALIZER_LEN);
-    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = complex_setf(1.414f, 0.0f);
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = x;
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #endif
@@ -324,8 +331,13 @@ static __inline__ int find_octant(complexf_t *z)
     if (abs_im > abs_re*0.4142136f  &&  abs_im < abs_re*2.4142136f)
     {
         /* Split the space along the two axes. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        b1 = (z->re < 0);
+        b2 = (z->im < 0);
+#else
         b1 = (z->re < 0.0f);
         b2 = (z->im < 0.0f);
+#endif
         bits = (b2 << 2) | ((b1 ^ b2) << 1) | 1;
     }
     else

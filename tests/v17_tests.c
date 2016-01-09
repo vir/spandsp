@@ -181,7 +181,12 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 {
     int i;
     int len;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t *coeffs;
+    complexf_t constel_point;
+#else
     complexf_t *coeffs;
+#endif
     float fpower;
     v17_rx_state_t *rx;
     static float smooth_power = 0.0f;
@@ -190,23 +195,39 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
     rx = (v17_rx_state_t *) user_data;
     if (constel)
     {
+        fpower = (constel->re - target->re)*(constel->re - target->re)
+               + (constel->im - target->im)*(constel->im - target->im);
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        fpower /= 4096.0*4096.0;
+#endif
+        smooth_power = 0.95f*smooth_power + 0.05f*fpower;
 #if defined(ENABLE_GUI)
         if (use_gui)
         {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            constel_point.re = constel->re/4096.0;
+            constel_point.im = constel->im/4096.0;
+            qam_monitor_update_constel(qam_monitor, &constel_point);
+#else
             qam_monitor_update_constel(qam_monitor, constel);
+#endif
             qam_monitor_update_carrier_tracking(qam_monitor, v17_rx_carrier_frequency(rx));
             qam_monitor_update_symbol_tracking(qam_monitor, v17_rx_symbol_timing_correction(rx));
         }
 #endif
-        fpower = (constel->re - target->re)*(constel->re - target->re)
-               + (constel->im - target->im)*(constel->im - target->im);
-        smooth_power = 0.95f*smooth_power + 0.05f*fpower;
         printf("%8d [%8.4f, %8.4f] [%8.4f, %8.4f] %2x %8.4f %8.4f %9.4f %7.3f %7.4f\n",
                symbol_no,
+#if defined(SPANDSP_USE_FIXED_POINTx)
+               constel->re/4096.0,
+               constel->im/4096.0,
+               target->re/4096.0,
+               target->im/4096.0,
+#else
                constel->re,
                constel->im,
                target->re,
                target->im,
+#endif
                symbol,
                fpower,
                smooth_power,
@@ -227,11 +248,13 @@ static void qam_report(void *user_data, const complexf_t *constel, const complex
 #endif
 #if defined(ENABLE_GUI)
             if (use_gui)
+            {
 #if defined(SPANDSP_USE_FIXED_POINTx)
                 qam_monitor_update_int_equalizer(qam_monitor, coeffs, len);
 #else
                 qam_monitor_update_equalizer(qam_monitor, coeffs, len);
 #endif
+            }
 #endif
             update_interval = 100;
         }
