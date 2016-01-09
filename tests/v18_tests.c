@@ -228,6 +228,7 @@ static int test_x_06(void)
     char dtmf[1024];
     char result[1024];
     const char *ref;
+    int len;
     int i;
 
     /* III.5.4.5.6 DTMF character conversion */
@@ -236,14 +237,14 @@ static int test_x_06(void)
     msg[127] = '\0';
     printf("%s\n", msg);
     
-    v18_encode_dtmf(NULL, dtmf, msg);
+    len = v18_encode_dtmf(NULL, dtmf, msg);
     printf("%s\n", dtmf);
 
-    v18_decode_dtmf(NULL, result, dtmf);
+    len = v18_decode_dtmf(NULL, result, dtmf);
 
     ref = "\b \n\n\n?\n\n\n  %+().+,-.0123456789:;(=)"
-          "?XABCDEFGHIJKLMNOPQRSTUVWXYZ\xC6\xD8\xC5"
-          " abcdefghijklmnopqrstuvwxyz\xE6\xF8\xE5 \b";
+          "?XABCDEFGHIJKLMNOPQRSTUVWXYZÆØÅ"
+          " abcdefghijklmnopqrstuvwxyzæøå \b";
 
     printf("Result:\n%s\n", result);
     printf("Reference result:\n%s\n", ref);
@@ -292,7 +293,7 @@ static int decode_test_data_file(int mode, const char *filename)
             break;
         v18_rx(v18_state, amp, len);
     }
-    if (sf_close_telephony(inhandle))
+    if (sf_close(inhandle) != 0)
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
         exit(2);
@@ -492,7 +493,7 @@ int main(int argc, char *argv[])
     basic_tests(V18_MODE_5BIT_45);
     if (log_audio)
     {
-        if (sf_close_telephony(outhandle))
+        if (sf_close(outhandle) != 0)
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
             exit(2);

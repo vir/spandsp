@@ -481,7 +481,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
         if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[s->tx.rrc_filter_step].im != 0.0f))
         {
             /* Add the guard tone */
-            famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_tone_gain, 0);
+            famp += dds_modf(&(s->tx.guard_phase), s->tx.guard_phase_rate, s->tx.guard_level, 0);
         }
         /* Don't bother saturating. We should never clip. */
         amp[sample] = (int16_t) lfastrintf(famp);
@@ -499,20 +499,20 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
         l = 1.6f*powf(10.0f, (power - 1.0f - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
         l = powf(10.0f, (power - 1.0f - 3.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_tone_gain = l*32768.0f;
+        s->tx.guard_level = l*32768.0f;
     }
     else if(s->tx.guard_phase_rate == dds_phase_ratef(1800.0f))
     {
         l = 1.6f*powf(10.0f, (power - 1.0f - 1.0f - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
         l = powf(10.0f, (power - 1.0f - 6.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_tone_gain = l*32768.0f;
+        s->tx.guard_level = l*32768.0f;
     }
     else
     {
         l = 1.6f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
-        s->tx.guard_tone_gain = 0;
+        s->tx.guard_level = 0;
     }
 }
 /*- End of function --------------------------------------------------------*/
@@ -552,7 +552,7 @@ SPAN_DECLARE(void) v22bis_set_put_bit(v22bis_state_t *s, put_bit_func_t put_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_tx_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;

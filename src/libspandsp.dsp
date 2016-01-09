@@ -245,10 +245,6 @@ SOURCE=.\lpc10_voicing.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\math_fixed.c
-# End Source File
-# Begin Source File
-
 SOURCE=.\modem_echo.c
 # End Source File
 # Begin Source File
@@ -564,10 +560,6 @@ SOURCE=.\spandsp/logging.h
 # Begin Source File
 
 SOURCE=.\spandsp/lpc10.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\spandsp/math_fixed.h
 # End Source File
 # Begin Source File
 

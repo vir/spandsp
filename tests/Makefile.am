@@ -37,6 +37,7 @@ EXTRA_DIST = fax_tests.sh \
              msvc/queue_tests.vcproj \
              msvc/t38_core_tests.vcproj \
              msvc/t38_non_ecm_buffer_tests.vcproj \
+             msvc/t38_terminal_tests.vcproj \
              msvc/v22bis_tests.vcproj \
              msvc/v29_tests.vcproj \
              msvc/v8_tests.vcproj \
@@ -83,7 +84,6 @@ noinst_PROGRAMS =   adsi_tests \
                     line_model_tests \
                     logging_tests \
                     lpc10_tests \
-                    math_fixed_tests \
                     make_g168_css \
                     modem_connect_tones_tests \
                     modem_echo_tests \
@@ -102,12 +102,15 @@ noinst_PROGRAMS =   adsi_tests \
                     super_tone_rx_tests \
                     super_tone_tx_tests \
                     swept_tone_tests \
+                    t4_tests \
                     t31_tests \
-                    t35_tests \
                     t38_core_tests \
                     t38_decode \
+                    t38_gateway_tests \
+                    t38_gateway_to_terminal_tests \
                     t38_non_ecm_buffer_tests \
-                    t4_tests \
+                    t38_terminal_tests \
+                    t38_terminal_to_gateway_tests \
                     time_scale_tests \
                     timezone_tests \
                     tone_detect_tests \
@@ -123,6 +126,8 @@ noinst_PROGRAMS =   adsi_tests \
                     v8_tests \
                     vector_float_tests \
                     vector_int_tests \
+                    testadsi \
+                    testfax \
                     tsb85_tests
 
 noinst_HEADERS =    echo_monitor.h \
@@ -191,7 +196,7 @@ echo_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspand
 fax_decode_SOURCES = fax_decode.c
 fax_decode_LDADD = $(LIBDIR) -lspandsp
 
-fax_tests_SOURCES = fax_tests.c fax_utils.c media_monitor.cpp
+fax_tests_SOURCES = fax_tests.c fax_utils.c
 fax_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 fsk_tests_SOURCES = fsk_tests.c
@@ -232,9 +237,6 @@ logging_tests_LDADD = $(LIBDIR) -lspandsp
 
 lpc10_tests_SOURCES = lpc10_tests.c
 lpc10_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
-
-math_fixed_tests_SOURCES = math_fixed_tests.c
-math_fixed_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 make_g168_css_SOURCES = make_g168_css.c
 make_g168_css_LDADD = $(LIBDIR) -lspandsp
@@ -290,23 +292,32 @@ super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR
 swept_tone_tests_SOURCES = swept_tone_tests.c
 swept_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
+t4_tests_SOURCES = t4_tests.c
+t4_tests_LDADD = $(LIBDIR) -lspandsp
+
 t31_tests_SOURCES = t31_tests.c fax_utils.c media_monitor.cpp
 t31_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
-
-t35_tests_SOURCES = t35_tests.c
-t35_tests_LDADD = $(LIBDIR) -lspandsp
 
 t38_core_tests_SOURCES = t38_core_tests.c
 t38_core_tests_LDADD = $(LIBDIR) -lspandsp
 
 t38_decode_SOURCES = t38_decode.c fax_utils.c pcap_parse.c udptl.c
-t38_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+t38_decode_LDADD = $(LIBDIR) -lspandsp -lpcap
+
+t38_gateway_tests_SOURCES = t38_gateway_tests.c fax_utils.c media_monitor.cpp
+t38_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+t38_gateway_to_terminal_tests_SOURCES = t38_gateway_to_terminal_tests.c fax_utils.c media_monitor.cpp
+t38_gateway_to_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 t38_non_ecm_buffer_tests_SOURCES = t38_non_ecm_buffer_tests.c
 t38_non_ecm_buffer_tests_LDADD = $(LIBDIR) -lspandsp
 
-t4_tests_SOURCES = t4_tests.c
-t4_tests_LDADD = $(LIBDIR) -lspandsp
+t38_terminal_tests_SOURCES = t38_terminal_tests.c fax_utils.c media_monitor.cpp
+t38_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+t38_terminal_to_gateway_tests_SOURCES = t38_terminal_to_gateway_tests.c fax_utils.c media_monitor.cpp
+t38_terminal_to_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 time_scale_tests_SOURCES = time_scale_tests.c
 time_scale_tests_LDADD = $(LIBDIR) -lspandsp
@@ -352,6 +363,12 @@ vector_float_tests_LDADD = $(LIBDIR) -lspandsp
 
 vector_int_tests_SOURCES = vector_int_tests.c
 vector_int_tests_LDADD = $(LIBDIR) -lspandsp
+
+testadsi_SOURCES = testadsi.c
+testadsi_LDADD = $(LIBDIR) -lspandsp
+
+testfax_SOURCES = testfax.c
+testfax_LDADD = $(LIBDIR) -lspandsp
 
 # We need to create the CSS files for echo cancellation tests.
 

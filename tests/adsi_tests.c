@@ -713,7 +713,7 @@ static void mitel_cm7291_side_2_and_bellcore_tests(int standard)
         {
             adsi_rx(rx_adsi, amp, frames);
         }
-        if (sf_close_telephony(inhandle))
+        if (sf_close(inhandle) != 0)
         {
             printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
@@ -819,7 +819,7 @@ int main(int argc, char *argv[])
                 break;
             adsi_rx(rx_adsi, amp, len);
         }
-        if (sf_close_telephony(inhandle))
+        if (sf_close(inhandle) != 0)
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
@@ -857,7 +857,7 @@ int main(int argc, char *argv[])
         }
         if (log_audio)
         {
-            if (sf_close_telephony(outhandle))
+            if (sf_close(outhandle) != 0)
             {
                 fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
                 exit(2);

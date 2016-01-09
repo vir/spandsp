@@ -54,37 +54,20 @@
 #include "spandsp/fast_convert.h"
 #include "spandsp/logging.h"
 #include "spandsp/saturated.h"
-#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
-#include "spandsp/t81_t82_arith_coding.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
-#include "spandsp/t42.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-#include "spandsp/t43.h"
 #endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
 #include "spandsp/image_translate.h"
 
 #include "spandsp/private/logging.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
-#include "spandsp/private/t81_t82_arith_coding.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
-#include "spandsp/private/t42.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-#include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
@@ -161,14 +144,14 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
     int output_length;
     int input_width;
     int input_length;
-    int x;
     double c1;
     double c2;
+    double int_part;
+    int x;
 #if defined(SPANDSP_USE_FIXED_POINT)
     int frac_row;
     int frac_col;
 #else
-    double int_part;
     double frac_row;
     double frac_col;
 #endif
@@ -215,7 +198,7 @@ static int image_resize_row(image_translate_state_t *s, uint8_t buf[], size_t le
         x = i*input_width/output_width;
         frac_col = x - x*output_width;
         c1 = s->raw_pixel_row[0][x] + (s->raw_pixel_row[0][x + 1] - s->raw_pixel_row[0][x])*frac_col;
-        c2 = s->raw_pixel_row[1][x] + (s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col;
+        c1 = s->raw_pixel_row[1][x] + (s->raw_pixel_row[1][x + 1] - s->raw_pixel_row[1][x])*frac_col;
         buf[i] = saturateu8(c1 + (c2 - c1)*frac_row);
     }
 #else

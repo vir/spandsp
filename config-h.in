@@ -72,17 +72,14 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <jpeglib.h> header file. */
-#undef HAVE_JPEGLIB_H
-
-/* Define to 1 if you have the `jpeg' library (-ljpeg). */
-#undef HAVE_LIBJPEG
-
 /* Define to 1 if you have the `m' library (-lm). */
 #undef HAVE_LIBM
 
 /* Define to 1 if you have the `tiff' library (-ltiff). */
 #undef HAVE_LIBTIFF
+
+/* Define to 1 if you have the 'libxml2' library (-lxml2). */
+#undef HAVE_LIBXML2
 
 /* Define to 1 if you have the <libxml/parser.h> header file. */
 #undef HAVE_LIBXML_PARSER_H
@@ -135,9 +132,6 @@
 
 /* Define to 1 if you have the `memset' function. */
 #undef HAVE_MEMSET
-
-/* Define to 1 if you have the open_memstream() function. */
-#undef HAVE_OPEN_MEMSTREAM
 
 /* Define to 1 if you have the <pcap.h> header file. */
 #undef HAVE_PCAP_H
@@ -255,6 +249,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -272,9 +269,6 @@
 
 /* Do not expect a misaligned memory access to work correctly */
 #undef SPANDSP_MISALIGNED_ACCESS_FAILS
-
-/* Use the AVX instruction set (i386 and x86_64 only). */
-#undef SPANDSP_USE_AVX
 
 /* Use the library symbol export capability of the compiler */
 #undef SPANDSP_USE_EXPORT_CAPABILITY

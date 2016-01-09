@@ -124,7 +124,7 @@ SPAN_DECLARE(const char *) v8_call_function_to_str(int call_function)
     case V8_CALL_FUNCTION_EXTENSION:
         return "Call function is in extension octet";
     }
-    return "Unknown call function";
+    return "???";
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -199,7 +199,7 @@ SPAN_DECLARE(const char *) v8_pstn_access_to_str(int pstn_access)
     case V8_PSTN_ACCESS_DCE_ON_DIGITAL | V8_PSTN_ACCESS_ANSWER_DCE_CELLULAR | V8_PSTN_ACCESS_CALL_DCE_CELLULAR:
         return "DCE on digital, and answering and calling modems on cellular";
     }
-    return "PSTN access unknown";
+    return "???";
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -235,7 +235,7 @@ SPAN_DECLARE(const char *) v8_pcm_modem_availability_to_str(int pcm_modem_availa
     case V8_PSTN_PCM_MODEM_V91 | V8_PSTN_PCM_MODEM_V90_V92_DIGITAL | V8_PSTN_PCM_MODEM_V90_V92_ANALOGUE:
         return "V.91 and V.90/V.92 digital/analogue available";
     }
-    return "PCM availability unknown";
+    return "???";
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -374,7 +374,6 @@ static const uint8_t *process_pstn_access(v8_state_t *s, const uint8_t *p)
 
 static const uint8_t *process_non_standard_facilities(v8_state_t *s, const uint8_t *p)
 {
-    /* TODO: This is wrong */
     s->result.nsf = (*p >> 5) & 0x07;
     span_log(&s->logging, SPAN_LOG_FLOW, "%s\n", v8_nsf_to_str(s->result.nsf));
     return p;
@@ -1012,9 +1011,9 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
     s->modulation_bytes = 3;
 
     s->ci_timer = 0;
-    s->calling_party = calling_party;
-    if (s->calling_party)
+    if (calling_party)
     {
+        s->calling_party = TRUE;
         s->state = V8_WAIT_1S;
         s->negotiation_timer = ms_to_samples(1000);
         s->ci_count = 0;
@@ -1024,10 +1023,12 @@ SPAN_DECLARE(int) v8_restart(v8_state_t *s, int calling_party, v8_parms_t *parms
     else
     {
         /* Send the ANSam or ANSam/ tone */
+        s->calling_party = FALSE;
+        modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
+                
+        v8_decode_init(s);
         s->state = V8_CM_WAIT;
         s->negotiation_timer = ms_to_samples(200 + 5000);
-        v8_decode_init(s);
-        modem_connect_tones_tx_init(&s->ansam_tx, s->parms.modem_connect_tone);
         s->modem_connect_tone_tx_on = ms_to_samples(75) + 1;
     }
 

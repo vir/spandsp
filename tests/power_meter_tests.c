@@ -33,7 +33,7 @@ Both tones and noise are used to check the meter's behaviour.
 */
 
 #if defined(HAVE_CONFIG_H)
-#include "config.h"
+#include <config.h>
 #endif
 
 #include <stdlib.h>
@@ -145,11 +145,7 @@ static int power_surge_detector_tests(void)
             exit(2);
         }
     }
-    if (sf_close_telephony(outhandle))
-    {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
-        exit(2);
-    }
+    sf_close(outhandle);
     printf("Min on %d, max on %d, min off %d, max off %d\n", extremes[0], extremes[1], extremes[2], extremes[3]);
     return 0;
 }
@@ -172,7 +168,7 @@ static int power_surge_detector_file_test(const char *file)
 
     if ((inhandle = sf_open_telephony_read(file, 1)) == NULL)
     {
-        printf("    Cannot open audio file '%s'\n", file);
+        printf("    Cannot open speech file '%s'\n", file);
         exit(2);
     }
 
@@ -206,16 +202,8 @@ static int power_surge_detector_file_test(const char *file)
         sf_writef_short(outhandle, amp_out, inframes);
         sample += inframes;
     }
-    if (sf_close_telephony(inhandle))
-    {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", file);
-        exit(2);
-    }
-    if (sf_close_telephony(outhandle))
-    {
-        fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
-        exit(2);
-    }
+    sf_close(inhandle);
+    sf_close(outhandle);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

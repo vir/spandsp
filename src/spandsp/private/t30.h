@@ -37,8 +37,8 @@ struct t30_state_s
     /*! \brief T.4 context for reading or writing image data. */
     union
     {
-        t4_rx_state_t rx;
-        t4_tx_state_t tx;
+        t4_state_t rx;
+        t4_state_t tx;
     } t4;
     /*! \brief The type of FAX operation currently in progress */
     int operation_in_progress;
@@ -73,11 +73,6 @@ struct t30_state_s
                page image. FALSE for FAX page headers to add to the overall length of
                the page. */
     int header_overlays_image;
-    /*! \brief Use private timezone if TRUE */
-    int use_own_tz;
-    /*! \brief Optional per instance time zone for the FAX page header timestamp. */
-    tz_t tz;
-
     /*! \brief TRUE if remote T.30 procedural interrupts are allowed. */
     int remote_interrupts_allowed;
 

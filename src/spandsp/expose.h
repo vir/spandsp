@@ -70,18 +70,13 @@
 #include <spandsp/private/v29tx.h>
 /*#include <spandsp/private/v32bis.h>*/
 /*#include <spandsp/private/v34.h>*/
-#include <spandsp/private/v42.h>
-#include <spandsp/private/v42bis.h>
 #include <spandsp/private/at_interpreter.h>
 #include <spandsp/private/fax_modems.h>
-#include <spandsp/private/timezone.h>
 #include <spandsp/private/image_translate.h>
 #include <spandsp/private/t4_t6_decode.h>
 #include <spandsp/private/t4_t6_encode.h>
 /*#include <spandsp/private/t81_t82_arith_coding.h>*/
 /*#include <spandsp/private/t85.h>*/
-/*#include <spandsp/private/t42.h>*/
-/*#include <spandsp/private/t43.h>*/
 #include <spandsp/private/t4_rx.h>
 #include <spandsp/private/t4_tx.h>
 #include <spandsp/private/t30.h>
@@ -91,7 +86,10 @@
 #include <spandsp/private/t38_gateway.h>
 #include <spandsp/private/t38_terminal.h>
 #include <spandsp/private/t31.h>
+#include <spandsp/private/timezone.h>
 #include <spandsp/private/v18.h>
+#include <spandsp/private/v42.h>
+#include <spandsp/private/v42bis.h>
 #include <spandsp/private/adsi.h>
 
 #endif

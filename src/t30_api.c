@@ -58,20 +58,11 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
-#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
-#include "spandsp/t81_t82_arith_coding.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/t81_t82_arith_coding.h"
 #include "spandsp/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
-#include "spandsp/t42.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-#include "spandsp/t43.h"
 #endif
 #include "spandsp/t4_t6_decode.h"
 #include "spandsp/t4_t6_encode.h"
@@ -82,18 +73,9 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/timezone.h"
-#if defined(SPANDSP_SUPPORT_T42)  ||  defined(SPANDSP_SUPPORT_T43)  ||  defined(SPANDSP_SUPPORT_T85)
-#include "spandsp/private/t81_t82_arith_coding.h"
-#endif
 #if defined(SPANDSP_SUPPORT_T85)
+#include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T42)
-#include "spandsp/private/t42.h"
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-#include "spandsp/private/t43.h"
 #endif
 #include "spandsp/private/t4_t6_decode.h"
 #include "spandsp/private/t4_t6_encode.h"
@@ -589,23 +571,18 @@ SPAN_DECLARE(int) t30_set_tx_page_header_info(t30_state_t *s, const char *info)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring)
+{
+    t4_tx_set_header_tz(&s->t4.tx, tzstring);
+    return 0;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(size_t) t30_get_tx_page_header_info(t30_state_t *s, char *info)
 {
     if (info)
         strcpy(info, s->header_info);
     return strlen(s->header_info);
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring)
-{
-    if (tz_init(&s->tz, tzstring))
-    {
-        s->use_own_tz = TRUE;
-        t4_tx_set_header_tz(&s->t4.tx, &s->tz);
-        return 0;
-    }
-    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -709,17 +686,12 @@ SPAN_DECLARE(int) t30_set_supported_compressions(t30_state_t *s, int supported_c
     mask = T30_SUPPORT_T4_1D_COMPRESSION
          | T30_SUPPORT_T4_2D_COMPRESSION
          | T30_SUPPORT_T6_COMPRESSION
-#if defined(SPANDSP_SUPPORT_T42)
-         //| T30_SUPPORT_T42_COMPRESSION
-#endif
-#if defined(SPANDSP_SUPPORT_T43)
-         | T30_SUPPORT_T43_COMPRESSION
-#endif
 #if defined(SPANDSP_SUPPORT_T85)
          | T30_SUPPORT_T85_COMPRESSION
-         | T30_SUPPORT_T85_L0_COMPRESSION
-#endif
+         | T30_SUPPORT_T85_L0_COMPRESSION;
+#else
          | 0;
+#endif
     s->supported_compressions = supported_compressions & mask;
     t30_build_dis_or_dtc(s);
     return 0;
@@ -752,11 +724,7 @@ SPAN_DECLARE(int) t30_set_supported_t30_features(t30_state_t *s, int supported_t
 
 SPAN_DECLARE(void) t30_set_status(t30_state_t *s, int status)
 {
-    if (s->current_status != status)
-    {
-        span_log(&s->logging, SPAN_LOG_FLOW, "Status changing to '%s'\n", t30_completion_code_to_str(status));
-        s->current_status = status;
-    }
+    s->current_status = status;
 }
 /*- End of function --------------------------------------------------------*/
 

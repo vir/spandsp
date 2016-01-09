@@ -17,7 +17,7 @@
 
 BASE=../test-data/itu/v56ter
 
-./v42bis_tests -c -d ${BASE}/1.TST
+./v42bis_tests ${BASE}/1.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -29,7 +29,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/1X04.TST
+./v42bis_tests ${BASE}/1X04.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -41,7 +41,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/1X30.TST
+./v42bis_tests ${BASE}/1X30.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -53,7 +53,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/2.TST
+./v42bis_tests ${BASE}/2.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -65,9 +65,8 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/2X10.TST
+./v42bis_tests ${BASE}/2X10.TST
 RETVAL=$?
-
 if [ $RETVAL != 0 ]
 then
     exit $RETVAL
@@ -78,7 +77,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/3.TST
+./v42bis_tests ${BASE}/3.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -90,7 +89,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/3X06.TST
+./v42bis_tests ${BASE}/3X06.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -102,7 +101,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/4.TST
+./v42bis_tests ${BASE}/4.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -114,7 +113,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/4X04.TST
+./v42bis_tests ${BASE}/4X04.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -126,7 +125,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/5.TST
+./v42bis_tests ${BASE}/5.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then
@@ -138,7 +137,7 @@ if [ $RETVAL != 0 ]
 then
     exit $RETVAL
 fi
-./v42bis_tests -c -d ${BASE}/5X16.TST
+./v42bis_tests ${BASE}/5X16.TST
 RETVAL=$?
 if [ $RETVAL != 0 ]
 then

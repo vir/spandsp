@@ -151,12 +151,12 @@ int main(int argc, char *argv[])
             count = 0;
         }
     }
-    if (sf_close(inhandle))
+    if (sf_close(inhandle) != 0)
     {
         printf("    Cannot close audio file '%s'\n", in_file_name);
         exit(2);
     }
-    if (sf_close(outhandle))
+    if (sf_close(outhandle) != 0)
     {
         printf("    Cannot close audio file '%s'\n", OUT_FILE_NAME);
         exit(2);

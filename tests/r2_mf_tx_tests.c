@@ -62,6 +62,7 @@ int main(int argc, char *argv[])
     int16_t amp[1000];
     int len;
     SNDFILE *outhandle;
+    int outframes;
     int digit;
     const char *digits = "0123456789BCDEF";
 
@@ -78,12 +79,12 @@ int main(int argc, char *argv[])
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples of %c\n", len, digits[digit]);
         if (len > 0)
-            sf_writef_short(outhandle, amp, len);
+            outframes = sf_writef_short(outhandle, amp, len);
         r2_mf_tx_put(&gen, 0);
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples\n", len);
         if (len > 0)
-            sf_writef_short(outhandle, amp, len);
+            outframes = sf_writef_short(outhandle, amp, len);
     }
 
     r2_mf_tx_init(&gen, TRUE);
@@ -93,15 +94,15 @@ int main(int argc, char *argv[])
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples of %c\n", len, digits[digit]);
         if (len > 0)
-            sf_writef_short(outhandle, amp, len);
+            outframes = sf_writef_short(outhandle, amp, len);
         r2_mf_tx_put(&gen, 0);
         len = r2_mf_tx(&gen, amp, 1000);
         printf("Generated %d samples\n", len);
         if (len > 0)
-            sf_writef_short(outhandle, amp, len);
+            outframes = sf_writef_short(outhandle, amp, len);
     }
 
-    if (sf_close_telephony(outhandle))
+    if (sf_close(outhandle) != 0)
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit (2);

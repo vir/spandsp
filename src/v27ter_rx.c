@@ -44,9 +44,6 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/math_fixed.h"
-#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -201,14 +198,14 @@ static void equalizer_restore(v27ter_rx_state_t *s)
 #if defined(SPANDSP_USE_FIXED_POINTx)
     cvec_copyi16(s->eq_coeff, s->eq_coeff_save, V27TER_EQUALIZER_LEN);
     cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_LEN);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN);
 #else
     cvec_copyf(s->eq_coeff, s->eq_coeff_save, V27TER_EQUALIZER_LEN);
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #endif
 
-    s->eq_put_step = (s->bit_rate == 4800)  ?  (RX_PULSESHAPER_4800_COEFF_SETS*5/2 - 1)  :  (RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2) - 1);
+    s->eq_put_step = (s->bit_rate == 4800)  ?  RX_PULSESHAPER_4800_COEFF_SETS*5/2  :  RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
     s->eq_step = 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -217,17 +214,13 @@ static void equalizer_reset(v27ter_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    static const complexi16_t x = {FP_SCALE(1.414f), FP_SCALE(0.0f)};
-
     cvec_zeroi16(s->eq_coeff, V27TER_EQUALIZER_LEN);
-    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = x;
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = complex_seti16(1.414f*FP_FACTOR, 0);
     cvec_zeroi16(s->eq_buf, V27TER_EQUALIZER_LEN);
-    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
+    s->eq_delta = 32768.0f*EQUALIZER_DELTA/V27TER_EQUALIZER_LEN);
 #else
-    static const complexf_t x = {1.414f, 0.0f};
-
     cvec_zerof(s->eq_coeff, V27TER_EQUALIZER_LEN);
-    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = x;
+    s->eq_coeff[V27TER_EQUALIZER_PRE_LEN + 1] = complex_setf(1.414f, 0.0f);
     cvec_zerof(s->eq_buf, V27TER_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #endif
@@ -242,8 +235,8 @@ static __inline__ complexi16_t complex_mul_q4_12(const complexi16_t *x, const co
 {
     complexi16_t z;
 
-    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> 12;
-    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> 12;
+    z.re = ((int32_t) x->re*y->re - (int32_t) x->im*y->im) >> 12;
+    z.im = ((int32_t) x->re*y->im + (int32_t) x->im*y->re) >> 12;
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -279,8 +272,8 @@ static void tune_equalizer(v27ter_rx_state_t *s, const complexi16_t *z, const co
     /* Find the x and y mismatch from the exact constellation position. */
     err.re = target->re*FP_FACTOR - z->re;
     err.im = target->im*FP_FACTOR - z->im;
-    err.re = ((int32_t) err.re*(int32_t) s->eq_delta) >> 15;
-    err.im = ((int32_t) err.im*(int32_t) s->eq_delta) >> 15;
+    err.re = ((int32_t) err.re*s->eq_delta) >> 15;
+    err.im = ((int32_t) err.im*s->eq_delta) >> 15;
     cvec_circular_lmsi16(s->eq_buf, s->eq_coeff, V27TER_EQUALIZER_LEN, s->eq_step, &err);
 }
 #else
@@ -331,13 +324,8 @@ static __inline__ int find_octant(complexf_t *z)
     if (abs_im > abs_re*0.4142136f  &&  abs_im < abs_re*2.4142136f)
     {
         /* Split the space along the two axes. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
-        b1 = (z->re < 0);
-        b2 = (z->im < 0);
-#else
         b1 = (z->re < 0.0f);
         b2 = (z->im < 0.0f);
-#endif
         bits = (b2 << 2) | ((b1 ^ b2) << 1) | 1;
     }
     else
@@ -584,16 +572,14 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         {
             s->gardner_step = 32;
             s->training_stage = TRAINING_STAGE_LOG_PHASE;
-            s->angles[0] =
-            s->start_angles[0] = arctan2(z.im, z.re);
+            vec_zeroi32(s->diff_angles, 16);
+            s->last_angles[0] = arctan2(z.im, z.re);
         }
         break;
     case TRAINING_STAGE_LOG_PHASE:
         /* Record the current alternate phase angle */
         target = &zero;
-        angle = arctan2(z.im, z.re);
-        s->angles[1] =
-        s->start_angles[1] = angle;
+        s->last_angles[1] = arctan2(z.im, z.re);
         s->training_count = 1;
         s->training_stage = TRAINING_STAGE_WAIT_FOR_HOP;
         break;
@@ -602,9 +588,11 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
         angle = arctan2(z.im, z.re);
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled ABAB segment */
-        ang = angle - s->angles[(s->training_count - 1) & 0xF];
-        s->angles[(s->training_count + 1) & 0xF] = angle;
-        if ((ang > 0x20000000  ||  ang < -0x20000000)  &&  s->training_count >= 3)
+        i = s->training_count + 1;
+        ang = angle - s->last_angles[i & 1];
+        s->last_angles[i & 1] = angle;
+        s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
+        if ((ang > DDS_PHASE(45.0f)  ||  ang < DDS_PHASE(-45.0f))  &&  s->training_count >= 13)
         {
             /* We seem to have a phase reversal */
             /* Slam the carrier frequency into line, based on the total phase drift over the last
@@ -614,21 +602,20 @@ static __inline__ void process_half_baud(v27ter_rx_state_t *s, const complexf_t 
             /* Step back a few symbols so we don't get ISI distorting things. */
             i = (s->training_count - 8) & ~1;
             /* Avoid the possibility of a divide by zero */
-            if (i)
+            if (i > 1)
             {
                 j = i & 0xF;
-                ang = (s->angles[j] - s->start_angles[0])/i
-                    + (s->angles[j | 0x1] - s->start_angles[1])/i;
+                ang = (s->diff_angles[j] + s->diff_angles[j | 0x1])/(i - 1);
                 if (s->bit_rate == 4800)
-                    s->carrier_phase_rate += ang/10;
+                    s->carrier_phase_rate += 16*(ang/10);
                 else
-                    s->carrier_phase_rate += 3*(ang/40);
+                    s->carrier_phase_rate += 3*16*(ang/40);
             }
             span_log(&s->logging, SPAN_LOG_FLOW, "Coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
             /* Check if the carrier frequency is plausible */
-            if (s->carrier_phase_rate < dds_phase_ratef(CARRIER_NOMINAL_FREQ - 20.0f)
+            if (s->carrier_phase_rate < DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ - 20.0f)
                 ||
-                s->carrier_phase_rate > dds_phase_ratef(CARRIER_NOMINAL_FREQ + 20.0f))
+                s->carrier_phase_rate > DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ + 20.0f))
             {
                span_log(&s->logging, SPAN_LOG_FLOW, "Training failed (sequence failed)\n");
                /* Park this modem */
@@ -785,7 +772,7 @@ static __inline__ int signal_detect(v27ter_rx_state_t *s, int16_t amp)
     /* There could be overflow here, but it isn't a problem in practice */
     diff = x - s->last_sample;
     s->last_sample = x;
-    power = power_meter_update(&(s->power), diff);
+    power = power_meter_update(&s->power, diff);
 #if defined(IAXMODEM_STUFF)
     /* Quick power drop fudge */
     diff = abs(diff);
@@ -793,7 +780,7 @@ static __inline__ int signal_detect(v27ter_rx_state_t *s, int16_t amp)
     {
         if (++s->low_samples > 120)
         {
-            power_meter_init(&(s->power), 4);
+            power_meter_init(&s->power, 4);
             s->high_sample = 0;
             s->low_samples = 0;
         }
@@ -805,7 +792,7 @@ static __inline__ int signal_detect(v27ter_rx_state_t *s, int16_t amp)
             s->high_sample = diff;
     }
 #endif
-    //span_log(&s->logging, SPAN_LOG_FLOW, "Power = %f\n", power_meter_current_dbm0(&(s->power)));
+    //span_log(&s->logging, SPAN_LOG_FLOW, "Power = %f\n", power_meter_current_dbm0(&s->power));
     if (s->signal_present > 0)
     {
         /* Look for power below turn-off threshold to turn the carrier off */
@@ -903,8 +890,8 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_4800_im[step], V27TER_RX_FILTER_STEPS, s->rrc_filter_step);
                 sample.im = (v*(int32_t) s->agc_scaling) >> 15;
                 z = dds_lookup_complexi16(s->carrier_phase);
-                zz.re = ((int32_t) sample.re*(int32_t) z.re - (int32_t) sample.im*(int32_t) z.im) >> 15;
-                zz.im = ((int32_t) -sample.re*(int32_t) z.im - (int32_t) sample.im*(int32_t) z.re) >> 15;
+                zz.re = ((int32_t) sample.re*z.re - (int32_t) sample.im*z.im) >> 15;
+                zz.im = ((int32_t) -sample.re*z.im - (int32_t) sample.im*z.re) >> 15;
 #else
                 v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_4800_re[step], V27TER_RX_FILTER_STEPS, s->rrc_filter_step);
                 sample.re = v*s->agc_scaling;
@@ -965,8 +952,8 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx(v27ter_rx_state_t *s, const int16_t amp[], in
                 v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_2400_im[step], V27TER_RX_FILTER_STEPS, s->rrc_filter_step);
                 sample.im = (v*(int32_t) s->agc_scaling) >> 15;
                 z = dds_lookup_complexi16(s->carrier_phase);
-                zz.re = ((int32_t) sample.re*(int32_t) z.re - (int32_t) sample.im*(int32_t) z.im) >> 15;
-                zz.im = ((int32_t) -sample.re*(int32_t) z.im - (int32_t) sample.im*(int32_t) z.re) >> 15;
+                zz.re = ((int32_t) sample.re*z.re - (int32_t) sample.im*z.im) >> 15;
+                zz.im = ((int32_t) -sample.re*z.im - (int32_t) sample.im*z.re) >> 15;
 #else
                 v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_2400_re[step], V27TER_RX_FILTER_STEPS, s->rrc_filter_step);
                 sample.re = v*s->agc_scaling;
@@ -1031,7 +1018,7 @@ SPAN_DECLARE(void) v27ter_rx_set_put_bit(v27ter_rx_state_t *s, put_bit_func_t pu
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
@@ -1079,7 +1066,7 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
     s->carrier_track_i = 200000.0f;
     s->carrier_track_p = 10000000.0f;
 #endif
-    power_meter_init(&(s->power), 4);
+    power_meter_init(&s->power, 4);
 
     s->constellation_state = 0;
 
@@ -1091,7 +1078,7 @@ SPAN_DECLARE(int) v27ter_rx_restart(v27ter_rx_state_t *s, int bit_rate, int old_
     }
     else
     {
-        s->carrier_phase_rate = dds_phase_ratef(CARRIER_NOMINAL_FREQ);
+        s->carrier_phase_rate = DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ);
 #if defined(SPANDSP_USE_FIXED_POINTx)
         s->agc_scaling = (float) FP_FACTOR*32768.0f*0.005f/RX_PULSESHAPER_4800_GAIN;
 #else

@@ -205,12 +205,12 @@ printf("len = %d\n", len);
             }
         }
     }
-    if (sf_close_telephony(inhandle))
+    if (sf_close(inhandle) != 0)
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", INPUT_FILE_NAME);
         exit(2);
     }
-    if (sf_close_telephony(outhandle))
+    if (sf_close(outhandle) != 0)
     {
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME);
         exit(2);

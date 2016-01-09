@@ -28,7 +28,6 @@ run_tsb85_test()
     fi
 }
 
-for TEST in PPS-MPS-lost-PPS
-do
+for TEST in PPS-MPS-lost-PPS ; do
     run_tsb85_test
 done

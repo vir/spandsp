@@ -212,7 +212,7 @@ static void signal_load(signal_source_t *sig, const char *name)
 
 static void signal_free(signal_source_t *sig)
 {
-    if (sf_close_telephony(sig->handle))
+    if (sf_close(sig->handle) != 0)
     {
         fprintf(stderr, "    Cannot close sound file '%s'\n", sig->name);
         exit(2);
@@ -324,7 +324,7 @@ static float level_measurement_device(level_measurement_device_t *dev, int16_t a
     }
     if (signal <= 0.0f)
         return -99.0f;
-    power = DBM0_MAX_POWER + 20.0f*log10f(signal/32767.0f + 1.0e-10f);
+    power = DBM0_MAX_POWER + 20.0f*log10f(signal/32767.0f);
     if (power > dev->peak)
         dev->peak = power;
     return power;
@@ -368,7 +368,7 @@ static void print_results(void)
     printf("%-4s  %-1d      %-5.1f%6.2fs%9.2f%9.2f%9.2f%9.2f%9.2f\n", 
            test_name,
            chan_model.model_no,
-           20.0f*log10f(-chan_model.erl + 1.0e-10f),
+           20.0f*log10f(-chan_model.erl), 
            0.0f, //test_clock,
            level_measurement_device_get_peak(rin_power_meter),
            level_measurement_device_get_peak(rout_power_meter),
@@ -1117,6 +1117,7 @@ static int perform_test_6(void)
     int16_t rx;
     int16_t tx;
     int16_t clean;
+    int local_max;
     tone_gen_descriptor_t tone_desc;
     tone_gen_state_t tone_state;
     int16_t local_sound[40000];
@@ -1150,7 +1151,7 @@ static int perform_test_6(void)
         j = 0;
         for (i = 0;  i < 5;  i++)
         {
-            tone_gen(&tone_state, local_sound, SAMPLE_RATE);
+            local_max = tone_gen(&tone_state, local_sound, SAMPLE_RATE);
             for (j = 0;  j < SAMPLE_RATE;  j++)
             {
                 tx = local_sound[j];
@@ -1185,6 +1186,7 @@ static int perform_test_7(void)
     int16_t rx;
     int16_t tx;
     int16_t clean;
+    int local_max;
     tone_gen_descriptor_t tone_desc;
     tone_gen_state_t tone_state;
     int16_t local_sound[40000];
@@ -1211,7 +1213,7 @@ static int perform_test_7(void)
     j = 0;
     for (i = 0;  i < 120;  i++)
     {
-        tone_gen(&tone_state, local_sound, SAMPLE_RATE);
+        local_max = tone_gen(&tone_state, local_sound, SAMPLE_RATE);
         for (j = 0;  j < SAMPLE_RATE;  j++)
         {
             tx = local_sound[j];
@@ -1487,6 +1489,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
     int16_t rout;
     int16_t sin;
     int16_t sout;
+    int32_t samples;
 
     mode |= ECHO_CAN_USE_ADAPTION;
     txfile = NULL;
@@ -1507,6 +1510,7 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
 
     ctx = echo_can_init(TEST_EC_TAPS, 0);
     echo_can_adaption_mode(ctx, mode);
+    samples = 0;
     do
     {
         if (two_channel_file)
@@ -1555,14 +1559,14 @@ static void simulate_ec(char *argv[], int two_channel_file, int mode)
 
     if (two_channel_file)
     {
-        sf_close_telephony(rxtxfile);
+        sf_close(rxtxfile);
     }
     else
     {
-        sf_close_telephony(txfile);
-        sf_close_telephony(rxfile);
+        sf_close(txfile);
+        sf_close(rxfile);
     }
-    sf_close_telephony(ecfile);
+    sf_close(ecfile);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1699,7 +1703,7 @@ int main(int argc, char *argv[])
                 }
                 match_test_name(argv[i]);
             }
-            if (sf_close_telephony(result_handle))
+            if (sf_close(result_handle) != 0)
             {
                 fprintf(stderr, "    Cannot close speech file '%s'\n", "result_sound.wav");
                 exit(2);
@@ -1708,7 +1712,7 @@ int main(int argc, char *argv[])
         }
         signal_free(&local_css);
         signal_free(&far_css);
-        if (sf_close_telephony(residue_handle))
+        if (sf_close(residue_handle) != 0)
         {
             fprintf(stderr, "    Cannot close speech file '%s'\n", RESIDUE_FILE_NAME);
             exit(2);
