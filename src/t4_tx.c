@@ -394,7 +394,7 @@ static void make_header(t4_tx_state_t *s, char *header)
              tm.tm_hour,
              tm.tm_min,
              s->header_info,
-             (s->tiff.local_ident)  ?  s->tiff.local_ident  :  "",
+             (s->tiff.metadata.local_ident)  ?  s->tiff.metadata.local_ident  :  "",
              s->current_page + 1);
 }
 /*- End of function --------------------------------------------------------*/
@@ -1422,7 +1422,7 @@ SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_tx_state_t *s, int bits)
 
 SPAN_DECLARE(void) t4_tx_set_local_ident(t4_tx_state_t *s, const char *ident)
 {
-    s->tiff.local_ident = (ident  &&  ident[0])  ?  ident  :  NULL;
+    s->tiff.metadata.local_ident = (ident  &&  ident[0])  ?  ident  :  NULL;
 }
 /*- End of function --------------------------------------------------------*/
 

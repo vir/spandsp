@@ -189,17 +189,17 @@ static int set_tiff_directory_info(t4_rx_state_t *s)
         TIFFSetField(t->tiff_file, TIFFTAG_HOSTCOMPUTER, buf);
 
 #if defined(TIFFTAG_FAXDCS)
-    if (t->dcs)
-        TIFFSetField(t->tiff_file, TIFFTAG_FAXDCS, t->dcs);
+    if (t->metadata.dcs)
+        TIFFSetField(t->tiff_file, TIFFTAG_FAXDCS, t->metadata.dcs);
 #endif
-    if (t->sub_address)
-        TIFFSetField(t->tiff_file, TIFFTAG_FAXSUBADDRESS, t->sub_address);
-    if (t->far_ident)
-        TIFFSetField(t->tiff_file, TIFFTAG_IMAGEDESCRIPTION, t->far_ident);
-    if (t->vendor)
-        TIFFSetField(t->tiff_file, TIFFTAG_MAKE, t->vendor);
-    if (t->model)
-        TIFFSetField(t->tiff_file, TIFFTAG_MODEL, t->model);
+    if (t->metadata.sub_address)
+        TIFFSetField(t->tiff_file, TIFFTAG_FAXSUBADDRESS, t->metadata.sub_address);
+    if (t->metadata.far_ident)
+        TIFFSetField(t->tiff_file, TIFFTAG_IMAGEDESCRIPTION, t->metadata.far_ident);
+    if (t->metadata.vendor)
+        TIFFSetField(t->tiff_file, TIFFTAG_MAKE, t->metadata.vendor);
+    if (t->metadata.model)
+        TIFFSetField(t->tiff_file, TIFFTAG_MODEL, t->metadata.model);
 
     time(&now);
     tm = localtime(&now);
@@ -1102,31 +1102,31 @@ SPAN_DECLARE(void) t4_rx_set_x_resolution(t4_rx_state_t *s, int resolution)
 
 SPAN_DECLARE(void) t4_rx_set_dcs(t4_rx_state_t *s, const char *dcs)
 {
-    s->tiff.dcs = (dcs  &&  dcs[0])  ?  dcs  :  NULL;
+    s->tiff.metadata.dcs = (dcs  &&  dcs[0])  ?  dcs  :  NULL;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t4_rx_set_sub_address(t4_rx_state_t *s, const char *sub_address)
 {
-    s->tiff.sub_address = (sub_address  &&  sub_address[0])  ?  sub_address  :  NULL;
+    s->tiff.metadata.sub_address = (sub_address  &&  sub_address[0])  ?  sub_address  :  NULL;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t4_rx_set_far_ident(t4_rx_state_t *s, const char *ident)
 {
-    s->tiff.far_ident = (ident  &&  ident[0])  ?  ident  :  NULL;
+    s->tiff.metadata.far_ident = (ident  &&  ident[0])  ?  ident  :  NULL;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t4_rx_set_vendor(t4_rx_state_t *s, const char *vendor)
 {
-    s->tiff.vendor = vendor;
+    s->tiff.metadata.vendor = vendor;
 }
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t4_rx_set_model(t4_rx_state_t *s, const char *model)
 {
-    s->tiff.model = model;
+    s->tiff.metadata.model = model;
 }
 /*- End of function --------------------------------------------------------*/
 

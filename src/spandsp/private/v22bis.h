@@ -93,12 +93,6 @@ struct v22bis_state_s
     /* Receive section */
     struct
     {
-        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
-        int16_t rrc_filter[V22BIS_RX_FILTER_STEPS];
-#else
-        float rrc_filter[V22BIS_RX_FILTER_STEPS];
-#endif
         /*! \brief Current offset into the RRC pulse shaping filter buffer. */
         int rrc_filter_step;
 
@@ -116,19 +110,11 @@ struct v22bis_state_s
         /*! \brief >0 if a signal above the minimum is present. It may or may not be a V.22bis signal. */
         int signal_present;
 
-        /*! \brief A measure of how much mismatch there is between the real constellation,
-            and the decoded symbol positions. */
-        float training_error;
-
         /*! \brief The current phase of the carrier (i.e. the DDS parameter). */
         uint32_t carrier_phase;
         /*! \brief The update rate for the phase of the carrier (i.e. the DDS increment). */
         int32_t carrier_phase_rate;
-        /*! \brief The proportional part of the carrier tracking filter. */
-        float carrier_track_p;
-        /*! \brief The integral part of the carrier tracking filter. */
-        float carrier_track_i;
-        
+
         /*! \brief A callback function which may be enabled to report every symbol's
                    constellation position. */
         qam_report_handler_t qam_report;
@@ -142,21 +128,49 @@ struct v22bis_state_s
         int32_t carrier_on_power;
         /*! \brief The power meter level at which carrier off is declared. */
         int32_t carrier_off_power;
+
+        int constellation_state;
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
         /*! \brief The scaling factor accessed by the AGC algorithm. */
         float agc_scaling;
-    
-        int constellation_state;
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+        int16_t rrc_filter[V22BIS_RX_FILTER_STEPS];
 
         /*! \brief The current delta factor for updating the equalizer coefficients. */
         float eq_delta;
-#if defined(SPANDSP_USE_FIXED_POINTx)
         /*! \brief The adaptive equalizer coefficients. */
         complexi_t eq_coeff[2*V22BIS_EQUALIZER_LEN + 1];
         /*! \brief The equalizer signal buffer. */
         complexi_t eq_buf[V22BIS_EQUALIZER_MASK + 1];
+
+        /*! \brief A measure of how much mismatch there is between the real constellation,
+                   and the decoded symbol positions. */
+        float training_error;
+        /*! \brief The proportional part of the carrier tracking filter. */
+        float carrier_track_p;
+        /*! \brief The integral part of the carrier tracking filter. */
+        float carrier_track_i;
 #else
+        /*! \brief The scaling factor accessed by the AGC algorithm. */
+        float agc_scaling;
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+        float rrc_filter[V22BIS_RX_FILTER_STEPS];
+
+        /*! \brief The current delta factor for updating the equalizer coefficients. */
+        float eq_delta;
+        /*! \brief The adaptive equalizer coefficients. */
         complexf_t eq_coeff[2*V22BIS_EQUALIZER_LEN + 1];
+        /*! \brief The equalizer signal buffer. */
         complexf_t eq_buf[V22BIS_EQUALIZER_MASK + 1];
+
+        /*! \brief A measure of how much mismatch there is between the real constellation,
+                   and the decoded symbol positions. */
+        float training_error;
+        /*! \brief The proportional part of the carrier tracking filter. */
+        float carrier_track_p;
+        /*! \brief The integral part of the carrier tracking filter. */
+        float carrier_track_i;
 #endif
         /*! \brief Current offset into the equalizer buffer. */
         int eq_step;
@@ -182,16 +196,27 @@ struct v22bis_state_s
     /* Transmit section */
     struct
     {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+        /*! \brief The guard tone level. */
+        int16_t guard_tone_gain;
         /*! \brief The gain factor needed to achieve the specified output power. */
-        float gain;
-
+        int16_t gain;
         /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         complexf_t rrc_filter[2*V22BIS_TX_FILTER_STEPS];
+#else
+        /*! \brief The guard tone level. */
+        float guard_tone_gain;
+        /*! \brief The gain factor needed to achieve the specified output power. */
+        float gain;
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
+        complexf_t rrc_filter[2*V22BIS_TX_FILTER_STEPS];
+#endif
+
         /*! \brief Current offset into the RRC pulse shaping filter buffer. */
         int rrc_filter_step;
 
         /*! \brief The register for the data scrambler. */
-        unsigned int scramble_reg;
+        uint32_t scramble_reg;
         /*! \brief A counter for the number of consecutive bits of repeating pattern through
                    the scrambler. */
         int scrambler_pattern_count;
@@ -208,7 +233,6 @@ struct v22bis_state_s
         uint32_t guard_phase;
         /*! \brief The update rate for the phase of the guard tone (i.e. the DDS increment). */
         int32_t guard_phase_rate;
-        float guard_level;
         /*! \brief The current fractional phase of the baud timing. */
         int baud_phase;
         /*! \brief The code number for the current position in the constellation. */

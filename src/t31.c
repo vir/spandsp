@@ -74,10 +74,10 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
-#include "spandsp/timezone.h"
 #if defined(SPANDSP_SUPPORT_V34)
 #include "spandsp/v34.h"
 #endif
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #include "spandsp/t30.h"
@@ -90,7 +90,6 @@
 #include "spandsp/t30_fcf.h"
 
 #include "spandsp/private/logging.h"
-#include "spandsp/private/timezone.h"
 #include "spandsp/private/bitstream.h"
 #include "spandsp/private/t38_core.h"
 #include "spandsp/private/silence_gen.h"
@@ -1348,7 +1347,7 @@ static void hdlc_tx_underflow(void *user_data)
     {
         s->hdlc_tx.final = FALSE;
         /* Schedule an orderly shutdown of the modem */
-        hdlc_tx_frame(&(s->audio.modems.hdlc_tx), NULL, 0);
+        hdlc_tx_frame(&s->audio.modems.hdlc_tx, NULL, 0);
     }
     else
     {
@@ -1545,9 +1544,9 @@ static void t31_v21_rx(t31_state_t *s)
     s->hdlc_tx.final = FALSE;
     s->hdlc_tx.len = 0;
     s->dled = FALSE;
-    hdlc_rx_init(&(s->audio.modems.hdlc_rx), FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
-    fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
-    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -39.09f);
+    hdlc_rx_init(&s->audio.modems.hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, hdlc_accept_frame, s);
+    fsk_rx_init(&s->audio.modems.v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) hdlc_rx_put_bit, &s->audio.modems.hdlc_rx);
+    fsk_rx_signal_cutoff(&s->audio.modems.v21_rx, -39.09f);
     s->at_state.transmit = TRUE;
 }
 /*- End of function --------------------------------------------------------*/
@@ -1841,7 +1840,7 @@ static __inline__ void dle_unstuff_hdlc(t31_state_t *s, const char *stuffed, int
                 }
                 else
                 {
-                    hdlc_tx_frame(&(s->audio.modems.hdlc_tx), s->hdlc_tx.buf, s->hdlc_tx.len);
+                    hdlc_tx_frame(&s->audio.modems.hdlc_tx, s->hdlc_tx.buf, s->hdlc_tx.len);
                     s->hdlc_tx.len = 0;
                 }
             }
@@ -1932,7 +1931,7 @@ static int process_class1_cmd(at_state_t *t, void *user_data, int direction, int
             if (s->t38_mode)
                 s->t38_fe.next_tx_samples = s->t38_fe.samples + ms_to_samples(val*10);
             else
-                silence_gen_alter(&(s->audio.modems.silence_gen), ms_to_samples(val*10));
+                silence_gen_alter(&s->audio.modems.silence_gen, ms_to_samples(val*10));
             s->at_state.transmit = TRUE;
         }
         else
@@ -2165,11 +2164,14 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
         if (s->tx.out_bytes)
         {
             /* Make room for new data in existing data buffer. */
-            s->tx.in_bytes = &(s->tx.data[s->tx.in_bytes]) - &(s->tx.data[s->tx.out_bytes]);
-            memmove(&(s->tx.data[0]), &(s->tx.data[s->tx.out_bytes]), s->tx.in_bytes);
+            s->tx.in_bytes = &s->tx.data[s->tx.in_bytes] - &s->tx.data[s->tx.out_bytes];
+            memmove(&s->tx.data[0], &s->tx.data[s->tx.out_bytes], s->tx.in_bytes);
             s->tx.out_bytes = 0;
         }
         dle_unstuff(s, t, len);
+        break;
+    case AT_MODE_CONNECTED:
+        /* TODO: Implement for data modem operation */
         break;
     }
     return len;
@@ -2233,7 +2235,7 @@ static int cng_rx(void *user_data, const int16_t amp[], int len)
     }
     else
     {
-        fsk_rx(&(s->audio.modems.v21_rx), amp, len);
+        fsk_rx(&s->audio.modems.v21_rx, amp, len);
     }
     return 0;
 }
@@ -2382,7 +2384,7 @@ SPAN_DECLARE_NONSTD(int) t31_rx(t31_state_t *s, int16_t amp[], int len)
     for (i = 0;  i < len;  i++)
     {
         /* Clean up any DC influence. */
-        power = power_meter_update(&(s->audio.rx_power), amp[i] - s->audio.last_sample);
+        power = power_meter_update(&s->audio.rx_power, amp[i] - s->audio.last_sample);
         s->audio.last_sample = amp[i];
         if (power > s->audio.silence_threshold_power)
         {
@@ -2465,7 +2467,7 @@ static int set_next_tx_type(t31_state_t *s)
         return 0;
     }
     /* There is nothing else to change to, so use zero length silence */
-    silence_gen_alter(&(s->audio.modems.silence_gen), 0);
+    silence_gen_alter(&s->audio.modems.silence_gen, 0);
     set_tx_handler(s, (span_tx_handler_t) &silence_gen, &s->audio.modems.silence_gen);
     set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
     return -1;
@@ -2582,18 +2584,8 @@ static int t31_t38_fe_init(t31_state_t *t,
 
     t->hdlc_tx.ptr = 0;
 
-    hdlc_tx_init(&s->hdlc_tx_term,
-                 FALSE,
-                 1,
-                 FALSE,
-                 NULL,
-                 NULL);
-    hdlc_rx_init(&s->hdlc_rx_term,
-                 FALSE,
-                 TRUE,
-                 2,
-                 NULL,
-                 NULL);
+    hdlc_tx_init(&s->hdlc_tx_term, FALSE, 1, FALSE, NULL, NULL);
+    hdlc_rx_init(&s->hdlc_rx_term, FALSE, TRUE, 2, NULL, NULL);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2650,14 +2642,10 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     v8_parms.pstn_access = 0;
     v8_parms.nsf = -1;
     v8_parms.t66 = -1;
-    v8_init(&s->audio.v8,
-            FALSE,
-            &v8_parms,
-            v8_handler,
-            s);
+    v8_init(&s->audio.v8, FALSE, &v8_parms, v8_handler, s);
 
 #endif
-    power_meter_init(&(s->audio.rx_power), 4);
+    power_meter_init(&s->audio.rx_power, 4);
     s->audio.last_sample = 0;
     s->audio.silence_threshold_power = power_meter_level_dbm0(-36);
     s->at_state.rx_signal_present = FALSE;
@@ -2682,9 +2670,7 @@ SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
     s->at_state.dte_inactivity_timeout = DEFAULT_DTE_TIMEOUT;
     if (tx_t38_packet_handler)
     {
-        t31_t38_fe_init(s,
-                        tx_t38_packet_handler,
-                        tx_t38_packet_user_data);
+        t31_t38_fe_init(s, tx_t38_packet_handler, tx_t38_packet_user_data);
         t31_set_t38_config(s, FALSE);
     }
     s->t38_mode = FALSE;

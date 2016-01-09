@@ -382,8 +382,9 @@ static const struct
 static void queue_phase(t30_state_t *s, int phase);
 static void set_phase(t30_state_t *s, int phase);
 static void set_state(t30_state_t *s, int state);
-static void send_simple_frame(t30_state_t *s, int type);
+static void shut_down_hdlc_tx(t30_state_t *s);
 static void send_frame(t30_state_t *s, const uint8_t *fr, int frlen);
+static void send_simple_frame(t30_state_t *s, int type);
 static void send_dcn(t30_state_t *s);
 static void repeat_last_command(t30_state_t *s);
 static void disconnect(t30_state_t *s);
@@ -815,6 +816,13 @@ static void print_frame(t30_state_t *s, const char *io, const uint8_t *msg, int 
              t30_frametype(msg[2]),
              (msg[1] & 0x10)  ?  ""  :  "out");
     span_log_buf(&s->logging, SPAN_LOG_FLOW, io, msg, len);
+}
+/*- End of function --------------------------------------------------------*/
+
+static void shut_down_hdlc_tx(t30_state_t *s)
+{
+    if (s->send_hdlc_handler)
+        s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -1720,9 +1728,7 @@ static int send_dis_or_dtc_sequence(t30_state_t *s, int start)
             break;
         case 3:
             s->step++;
-            /* Shut down HDLC transmission. */
-            if (s->send_hdlc_handler)
-                s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+            shut_down_hdlc_tx(s);
             break;
         default:
             return -1;
@@ -1775,9 +1781,7 @@ static int send_dis_or_dtc_sequence(t30_state_t *s, int start)
             break;
         case 8:
             s->step++;
-            /* Shut down HDLC transmission. */
-            if (s->send_hdlc_handler)
-                s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+            shut_down_hdlc_tx(s);
             break;
         default:
             return -1;
@@ -1836,9 +1840,7 @@ static int send_dcs_sequence(t30_state_t *s, int start)
         break;
     case 7:
         s->step++;
-        /* Shut down HDLC transmission. */
-        if (s->send_hdlc_handler)
-            s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+        shut_down_hdlc_tx(s);
         break;
     default:
         return -1;
@@ -5782,9 +5784,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         case T30_STATE_F_CFR:
             if (s->step == 0)
             {
-                /* Shut down HDLC transmission. */
-                if (s->send_hdlc_handler)
-                    s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                shut_down_hdlc_tx(s);
                 s->step++;
             }
             else
@@ -5806,9 +5806,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         case T30_STATE_F_FTT:
             if (s->step == 0)
             {
-                /* Shut down HDLC transmission. */
-                if (s->send_hdlc_handler)
-                    s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                shut_down_hdlc_tx(s);
                 s->step++;
             }
             else
@@ -5824,9 +5822,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         case T30_STATE_F_POST_RCP_MCF:
             if (s->step == 0)
             {
-                /* Shut down HDLC transmission. */
-                if (s->send_hdlc_handler)
-                    s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                shut_down_hdlc_tx(s);
                 s->step++;
             }
             else
@@ -5878,9 +5874,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         case T30_STATE_IV_CTC:
             if (s->step == 0)
             {
-                /* Shut down HDLC transmission. */
-                if (s->send_hdlc_handler)
-                    s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                shut_down_hdlc_tx(s);
                 s->step++;
             }
             else
@@ -5903,9 +5897,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
         case T30_STATE_C:
             if (s->step == 0)
             {
-                /* Shut down HDLC transmission. */
-                if (s->send_hdlc_handler)
-                    s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                shut_down_hdlc_tx(s);
                 s->step++;
             }
             else
@@ -5963,9 +5955,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             {
                 if (send_next_ecm_frame(s))
                 {
-                    /* Shut down HDLC transmission. */
-                    if (s->send_hdlc_handler)
-                        s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                    shut_down_hdlc_tx(s);
                     s->step++;
                 }
             }
@@ -5984,9 +5974,7 @@ SPAN_DECLARE(void) t30_front_end_status(void *user_data, int status)
             /* This should be the end of a CTR being sent. */
             if (s->step == 0)
             {
-                /* Shut down HDLC transmission. */
-                if (s->send_hdlc_handler)
-                    s->send_hdlc_handler(s->send_hdlc_user_data, NULL, 0);
+                shut_down_hdlc_tx(s);
                 s->step++;
             }
             else

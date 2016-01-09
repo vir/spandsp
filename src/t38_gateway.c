@@ -69,9 +69,9 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
-#include "spandsp/timezone.h"
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/modem_connect_tones.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #if defined(SPANDSP_SUPPORT_T85)
@@ -141,14 +141,6 @@ enum
     DISBIT6 = 0x20,
     DISBIT7 = 0x40,
     DISBIT8 = 0x80
-};
-
-enum
-{
-    T38_NONE,
-    T38_V27TER_RX,
-    T38_V29_RX,
-    T38_V17_RX
 };
 
 enum
@@ -793,15 +785,15 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         uint8_t dcs_code;
     } modem_codes[] =
     {
-        {14400, T38_V17_RX,      DISBIT6},
-        {12000, T38_V17_RX,      (DISBIT6 | DISBIT4)},
-        { 9600, T38_V17_RX,      (DISBIT6 | DISBIT3)},
-        { 9600, T38_V29_RX,      DISBIT3},
-        { 7200, T38_V17_RX,      (DISBIT6 | DISBIT4 | DISBIT3)},
-        { 7200, T38_V29_RX,      (DISBIT4 | DISBIT3)},
-        { 4800, T38_V27TER_RX,   DISBIT4},
-        { 2400, T38_V27TER_RX,   0},
-        {    0, T38_NONE,        0}
+        {14400, FAX_MODEM_V17_RX,       DISBIT6},
+        {12000, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4)},
+        { 9600, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT3)},
+        { 9600, FAX_MODEM_V29_RX,       DISBIT3},
+        { 7200, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4 | DISBIT3)},
+        { 7200, FAX_MODEM_V29_RX,       (DISBIT4 | DISBIT3)},
+        { 4800, FAX_MODEM_V27TER_RX,    DISBIT4},
+        { 2400, FAX_MODEM_V27TER_RX,    0},
+        {    0, FAX_MODEM_NONE,         0}
     };
     static const int minimum_scan_line_times[8] =
     {
@@ -855,7 +847,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         /* We need to check which modem type is about to be used, so we can start the
            correct modem. */
         s->core.fast_bit_rate = 0;
-        s->core.fast_rx_modem = T38_NONE;
+        s->core.fast_rx_modem = FAX_MODEM_NONE;
         s->core.image_data_mode = FALSE;
         s->core.short_train = FALSE;
         if (from_modem)
@@ -906,7 +898,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
             /* If we are hitting one of these conditions, it will take another DCS/DTC to select
                the fast modem again, so abandon our idea of it. */
             s->core.fast_bit_rate = 0;
-            s->core.fast_rx_modem = T38_NONE;
+            s->core.fast_rx_modem = FAX_MODEM_NONE;
             s->core.image_data_mode = FALSE;
             s->core.short_train = FALSE;
 #endif
@@ -932,7 +924,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         /* If we are hitting one of these conditions, it will take another DCS/DTC to select
            the fast modem again, so abandon our idea of it. */
         s->core.fast_bit_rate = 0;
-        s->core.fast_rx_modem = T38_NONE;
+        s->core.fast_rx_modem = FAX_MODEM_NONE;
         s->core.image_data_mode = FALSE;
         s->core.short_train = FALSE;
 #endif
@@ -1591,7 +1583,7 @@ static int set_fast_packetisation(t38_gateway_state_t *s)
     ind = T38_IND_NO_SIGNAL;
     switch (s->core.fast_rx_active)
     {
-    case T38_V17_RX:
+    case FAX_MODEM_V17_RX:
         set_octets_per_data_packet(s, s->core.fast_bit_rate);
         switch (s->core.fast_bit_rate)
         {
@@ -1615,7 +1607,7 @@ static int set_fast_packetisation(t38_gateway_state_t *s)
         }
         /*endswitch*/
         break;
-    case T38_V27TER_RX:
+    case FAX_MODEM_V27TER_RX:
         set_octets_per_data_packet(s, s->core.fast_bit_rate);
         switch (s->core.fast_bit_rate)
         {
@@ -1631,7 +1623,7 @@ static int set_fast_packetisation(t38_gateway_state_t *s)
         }
         /*endswitch*/
         break;
-    case T38_V29_RX:
+    case FAX_MODEM_V29_RX:
         set_octets_per_data_packet(s, s->core.fast_bit_rate);
         switch (s->core.fast_bit_rate)
         {
@@ -2107,6 +2099,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
 
 static int restart_rx_modem(t38_gateway_state_t *s)
 {
+    fax_modems_state_t *t;
     put_bit_func_t put_bit_func;
     void *put_bit_user_data;
 
@@ -2128,19 +2121,20 @@ static int restart_rx_modem(t38_gateway_state_t *s)
              s->core.short_train,
              s->core.ecm_mode);
 
-    hdlc_rx_init(&(s->audio.modems.hdlc_rx), FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
-    s->audio.modems.rx_signal_present = FALSE;
-    s->audio.modems.rx_trained = FALSE;
+    t = &s->audio.modems;
+    hdlc_rx_init(&t->hdlc_rx, FALSE, TRUE, HDLC_FRAMING_OK_THRESHOLD, NULL, s);
+    t->rx_signal_present = FALSE;
+    t->rx_trained = FALSE;
     /* Default to the transmit data being V.21, unless a faster modem pops up trained. */
     s->t38x.current_tx_data_type = T38_DATA_V21;
-    fsk_rx_init(&(s->audio.modems.v21_rx), &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &(s->audio.modems.hdlc_rx));
+    fsk_rx_init(&t->v21_rx, &preset_fsk_specs[FSK_V21CH2], FSK_FRAME_MODE_SYNC, (put_bit_func_t) t38_hdlc_rx_put_bit, &t->hdlc_rx);
 #if 0
-    fsk_rx_signal_cutoff(&(s->audio.modems.v21_rx), -45.5f);
+    fsk_rx_signal_cutoff(&t->v21_rx, -45.5f);
 #endif
     if (s->core.image_data_mode  &&  s->core.ecm_mode)
     {
         put_bit_func = (put_bit_func_t) t38_hdlc_rx_put_bit;
-        put_bit_user_data = (void *) &(s->audio.modems.hdlc_rx);
+        put_bit_user_data = (void *) &t->hdlc_rx;
     }
     else
     {
@@ -2156,27 +2150,27 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     s->core.to_t38.octets_per_data_packet = 1;
     switch (s->core.fast_rx_modem)
     {
-    case T38_V17_RX:
-        v17_rx_restart(&s->audio.modems.fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
-        v17_rx_set_put_bit(&s->audio.modems.fast_modems.v17_rx, put_bit_func, put_bit_user_data);
-        set_rx_handler(s, &v17_v21_rx, &v17_v21_rx_fillin, s);
-        s->core.fast_rx_active = T38_V17_RX;
-        break;
-    case T38_V27TER_RX:
-        v27ter_rx_restart(&s->audio.modems.fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
-        v27ter_rx_set_put_bit(&s->audio.modems.fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
+    case FAX_MODEM_V27TER_RX:
+        v27ter_rx_restart(&t->fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
+        v27ter_rx_set_put_bit(&t->fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v27ter_v21_rx, &v27ter_v21_rx_fillin, s);
-        s->core.fast_rx_active = T38_V27TER_RX;
+        s->core.fast_rx_active = FAX_MODEM_V27TER_RX;
         break;
-    case T38_V29_RX:
-        v29_rx_restart(&s->audio.modems.fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
-        v29_rx_set_put_bit(&s->audio.modems.fast_modems.v29_rx, put_bit_func, put_bit_user_data);
+    case FAX_MODEM_V29_RX:
+        v29_rx_restart(&t->fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
+        v29_rx_set_put_bit(&t->fast_modems.v29_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v29_v21_rx, &v29_v21_rx_fillin, s);
-        s->core.fast_rx_active = T38_V29_RX;
+        s->core.fast_rx_active = FAX_MODEM_V29_RX;
+        break;
+    case FAX_MODEM_V17_RX:
+        v17_rx_restart(&t->fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
+        v17_rx_set_put_bit(&t->fast_modems.v17_rx, put_bit_func, put_bit_user_data);
+        set_rx_handler(s, &v17_v21_rx, &v17_v21_rx_fillin, s);
+        s->core.fast_rx_active = FAX_MODEM_V17_RX;
         break;
     default:
-        set_rx_handler(s, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &(s->audio.modems.v21_rx));
-        s->core.fast_rx_active = T38_NONE;
+        set_rx_handler(s, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &t->v21_rx);
+        s->core.fast_rx_active = FAX_MODEM_NONE;
         break;
     }
     /*endswitch*/

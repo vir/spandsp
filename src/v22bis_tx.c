@@ -398,9 +398,6 @@ static complexf_t training_get(v22bis_state_t *s)
             s->tx.current_get_bit = s->get_bit;
         }
         return v22bis_constellation[(s->tx.constellation_state << 2) | bits];
-    case V22BIS_TX_TRAINING_STAGE_PARKED:
-    default:
-        return zero;
     }
     return zero;
 }
@@ -475,7 +472,7 @@ SPAN_DECLARE_NONSTD(int) v22bis_tx(v22bis_state_t *s, int16_t amp[], int len)
         if (s->tx.guard_phase_rate  &&  (s->tx.rrc_filter[s->tx.rrc_filter_step].re != 0.0f  ||  s->tx.rrc_filter[s->tx.rrc_filter_step].im != 0.0f))
         {
             /* Add the guard tone */
-            famp += dds_modf(&s->tx.guard_phase, s->tx.guard_phase_rate, s->tx.guard_level, 0);
+            famp += dds_modf(&s->tx.guard_phase, s->tx.guard_phase_rate, s->tx.guard_tone_gain, 0);
         }
         /* Don't bother saturating. We should never clip. */
         amp[sample] = (int16_t) lfastrintf(famp);
@@ -493,20 +490,20 @@ SPAN_DECLARE(void) v22bis_tx_power(v22bis_state_t *s, float power)
         l = 1.6f*powf(10.0f, (power - 1.0f - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
         l = powf(10.0f, (power - 1.0f - 3.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_level = l*32768.0f;
+        s->tx.guard_tone_gain = l*32768.0f;
     }
     else if(s->tx.guard_phase_rate == dds_phase_ratef(1800.0f))
     {
         l = 1.6f*powf(10.0f, (power - 1.0f - 1.0f - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
         l = powf(10.0f, (power - 1.0f - 6.0f - DBM0_MAX_POWER)/20.0f);
-        s->tx.guard_level = l*32768.0f;
+        s->tx.guard_tone_gain = l*32768.0f;
     }
     else
     {
         l = 1.6f*powf(10.0f, (power - DBM0_MAX_POWER)/20.0f);
         s->tx.gain = l*32768.0f/(TX_PULSESHAPER_GAIN*3.0f);
-        s->tx.guard_level = 0;
+        s->tx.guard_tone_gain = 0;
     }
 }
 /*- End of function --------------------------------------------------------*/
