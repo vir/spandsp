@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < 511*2;  i++)
     {
         bit = bert_get_bit(&tx_bert);
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
     }
     bert_result(&rx_bert, &bert_results);
     printf("Zeros:     Bad bits %d/%d\n", bert_results.bad_bits, bert_results.total_bits);
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < 511*2;  i++)
     {
         bit = bert_get_bit(&tx_bert);
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
     }
     bert_result(&rx_bert, &bert_results);
     printf("Ones:      Bad bits %d/%d\n", bert_results.bad_bits, bert_results.total_bits);
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < 511*2;  i++)
     {
         bit = bert_get_bit(&tx_bert);
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
     }
     bert_result(&rx_bert, &bert_results);
     printf("1 to 3:    Bad bits %d/%d\n", bert_results.bad_bits, bert_results.total_bits);
@@ -174,7 +174,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
-    
+
     bert_init(&tx_bert, 0, BERT_PATTERN_7_TO_1, 300, 20);
     bert_init(&rx_bert, 0, BERT_PATTERN_7_TO_1, 300, 20);
     for (i = 0;  i < 511*2;  i++)
@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
         {
             zeros++;
         }
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
         test[tx_bert.tx.reg]++;
     }
     failed = false;
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
         {
             zeros++;
         }
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
         test[tx_bert.tx.reg]++;
     }
     failed = false;
@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
         {
             zeros++;
         }
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
         test[tx_bert.tx.reg]++;
     }
     failed = false;
@@ -325,7 +325,7 @@ int main(int argc, char *argv[])
     bert_init(&tx_bert, 0, BERT_PATTERN_ITU_O151_20, 300, 20);
     bert_init(&rx_bert, 0, BERT_PATTERN_ITU_O151_20, 300, 20);
     for (i = 0;  i < 0x100000;  i++)
-        test[i] = 0;    
+        test[i] = 0;
     max_zeros = 0;
     zeros = 0;
     for (i = 0;  i < 1048575*2;  i++)
@@ -341,7 +341,7 @@ int main(int argc, char *argv[])
         {
             zeros++;
         }
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
         test[tx_bert.tx.reg]++;
     }
     failed = false;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
     bert_init(&tx_bert, 0, BERT_PATTERN_ITU_O151_23, 300, 20);
     bert_init(&rx_bert, 0, BERT_PATTERN_ITU_O151_23, 300, 20);
     for (i = 0;  i < 0x800000;  i++)
-        test[i] = 0;    
+        test[i] = 0;
     max_zeros = 0;
     zeros = 0;
     for (i = 0;  i < 8388607*2;  i++)
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
         {
             zeros++;
         }
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
         test[tx_bert.tx.reg]++;
     }
     failed = false;
@@ -409,7 +409,7 @@ int main(int argc, char *argv[])
     for (i = 0;  i < 100000;  i++)
     {
         bit = bert_get_bit(&tx_bert);
-        bert_put_bit(&rx_bert, bit);        
+        bert_put_bit(&rx_bert, bit);
     }
     bert_result(&rx_bert, &bert_results);
     printf("QBF:       Bad bits %d/%d\n", bert_results.bad_bits, bert_results.total_bits);
@@ -449,9 +449,9 @@ int main(int argc, char *argv[])
         //    bert_put_bit(&bert, bit);
         bert_put_bit(&bert, bit);
     }
-    
+
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

@@ -818,7 +818,7 @@ static void decode_bitstream(const char *in_file_name)
     int num;
     hdlc_rx_state_t rx;
     FILE *in;
-    
+
     if ((in = fopen(in_file_name, "r")) == NULL)
     {
         fprintf(stderr, "Failed to open '%s'\n", in_file_name);
@@ -862,7 +862,7 @@ int main(int argc, char *argv[])
         decode_bitstream(in_file_name);
     else
         hdlc_tests();
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

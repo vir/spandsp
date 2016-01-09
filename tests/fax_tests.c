@@ -137,7 +137,7 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
 
     i = (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i);
-    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));    
+    printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));
     fax_log_final_transfer_statistics(s, tag);
     fax_log_tx_parameters(s, tag);
     fax_log_rx_parameters(s, tag);
@@ -154,7 +154,7 @@ static void real_time_frame_handler(t30_state_t *s,
                                     int len)
 {
     int i;
-    
+
     i = (intptr_t) user_data;
     printf("%c: Real time frame handler on channel %c - %s, %s, length = %d\n",
            i,
@@ -168,7 +168,7 @@ static void real_time_frame_handler(t30_state_t *s,
 static int document_handler(t30_state_t *s, void *user_data, int event)
 {
     int i;
-    
+
     i = (intptr_t) user_data;
     printf("%c: Document handler on channel %c - event %d\n", i, i, event);
     return false;
@@ -499,7 +499,7 @@ int main(int argc, char *argv[])
                         for (k = 0;  k < 5;  k++)
                             mc->amp[k] = 0;
                     }
-                }    
+                }
             }
             if (t30->state == t30_state_to_wreck)
                 memset(machines[j ^ 1].amp, 0, sizeof(int16_t)*SAMPLES_PER_CHUNK);
@@ -543,7 +543,7 @@ int main(int argc, char *argv[])
         }
     }
     printf("Total audio time = %ds (wall time %ds)\n", machines[0].total_audio_time/8000, (int) (end_time - start_time));
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

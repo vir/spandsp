@@ -1036,10 +1036,7 @@ static int next_step(faxtester_state_t *s)
         }
         else if (strcasecmp((const char *) type, "TCF") == 0)
         {
-            if (value)
-                i = atoi((const char *) value);
-            else
-                i = 450;
+            i = (value)  ?  atoi((const char *) value)  :  450;
             if (pattern)
             {
                 /* TODO: implement proper patterns */
@@ -1471,7 +1468,7 @@ int main(int argc, char *argv[])
         test_name = argv[0];
 
     strcpy(image_path, ".");
-    faxtester_init(&state, true);
+    faxtester_init(&state);
     memset(&expected_rx_info, 0, sizeof(expected_rx_info));
     span_log_set_level(&state.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_SHOW_TAG | SPAN_LOG_SHOW_SAMPLE_TIME | SPAN_LOG_FLOW);
     span_log_set_tag(&state.logging, "B");

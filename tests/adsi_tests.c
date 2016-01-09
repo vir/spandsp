@@ -34,9 +34,6 @@ tests, these tests do not include line modelling.
 \section adsi_tests_page_sec_2 How does it work?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
-//#define WITH_SPANDSP_INTERNALS
-
 #if defined(HAVE_CONFIG_H)
 #include "config.h"
 #endif
@@ -48,16 +45,14 @@ tests, these tests do not include line modelling.
 #include <assert.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
-#define OUTPUT_FILE_NAME    "adsi.wav"
+#define OUTPUT_FILE_NAME            "adsi.wav"
 
-#define BLOCK_LEN           160
+#define BLOCK_LEN                   160
 
 #define MITEL_DIR                   "../test-data/mitel/"
 #define BELLCORE_DIR                "../test-data/bellcore/"
@@ -240,7 +235,7 @@ static void put_adsi_msg(void *user_data, const uint8_t *msg, int len)
     int field_len;
     int message_type;
     uint8_t body[256];
-    
+
     printf("Good message received (%d bytes)\n", len);
     good_message_received = true;
     for (i = 0;  i < len;  i++)
@@ -791,7 +786,7 @@ int main(int argc, char *argv[])
         }
     }
     outhandle = NULL;
-    
+
     tdd_character_set_tests();
 
     if (decode_test_file)

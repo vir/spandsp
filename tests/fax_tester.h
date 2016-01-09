@@ -182,11 +182,9 @@ void faxtester_set_ecm_image_buffer(faxtester_state_t *s, const uint8_t *buf, in
 /*! Initialise a FAX context.
     \brief Initialise a FAX context.
     \param s The FAX tester context.
-    \param calling_party TRUE if the context is for a calling party. FALSE if the
-           context is for an answering party.
     \return A pointer to the FAX context, or NULL if there was a problem.
 */
-faxtester_state_t *faxtester_init(faxtester_state_t *s, int calling_party);
+faxtester_state_t *faxtester_init(faxtester_state_t *s);
 
 /*! Release a FAX context.
     \brief Release a FAX context.

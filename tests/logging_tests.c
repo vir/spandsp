@@ -110,7 +110,7 @@ static void error_handler(const char *text)
         "ERROR Log with severity log 1 2 3\n",
         ""
     };
-    
+
     if (strcmp(ref[error_step], text))
     {
         printf(">>>: %s", ref[error_step]);

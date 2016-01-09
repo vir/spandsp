@@ -515,7 +515,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
             s->rx.gardner_step = 32;
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES:
-        /* Calling modem only */
+        /* Calling modem only. */
         /* The calling modem should initially receive unscrambled ones at 1200bps */
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);

@@ -120,7 +120,7 @@ static int preamble_get_bit(void *user_data)
 {
     static int bit_no = 0;
     int bit;
-    
+
     /* Generate a section of HDLC flag octet preamble. Then generate some random
        bits, which should not look like preamble. */
     if (++preamble_count < 255)
@@ -313,7 +313,7 @@ int main(int argc, char *argv[])
         /*endfor*/
     }
     /*endif*/
-    
+
     if ((test_list & PERFORM_TEST_1B))
     {
         printf("Test 1b: CED/ANS generation to a file\n");
@@ -372,7 +372,7 @@ int main(int argc, char *argv[])
         /*endfor*/
     }
     /*endif*/
-    
+
     if ((test_list & PERFORM_TEST_1E))
     {
         printf("Test 1e: ANSam/ (Modulated EC-disable) generation to a file\n");
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
         exit(2);
     }
     /*endif*/
-    
+
     if ((test_list & PERFORM_TEST_2A))
     {
         printf("Test 2a: CNG detection with frequency\n");
@@ -1423,7 +1423,7 @@ int main(int argc, char *argv[])
         printf("    File gave %d hits.\n", hits);
     }
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

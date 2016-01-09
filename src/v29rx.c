@@ -973,20 +973,28 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
         /* Symbol timing synchronisation band edge filters */
 #if defined(SPANDSP_USE_FIXED_POINT)
         /* Low Nyquist band edge filter */
-        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> FP_SHIFT_FACTOR) + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> FP_SHIFT_FACTOR) + sample.re;
+        v = ((s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0) >> FP_SHIFT_FACTOR)
+          + ((s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1) >> FP_SHIFT_FACTOR)
+          + sample.re;
         s->symbol_sync_low[1] = s->symbol_sync_low[0];
         s->symbol_sync_low[0] = v;
         /* High Nyquist band edge filter */
-        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> FP_SHIFT_FACTOR) + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> FP_SHIFT_FACTOR) + sample.re;
+        v = ((s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0) >> FP_SHIFT_FACTOR)
+          + ((s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1) >> FP_SHIFT_FACTOR)
+          + sample.re;
         s->symbol_sync_high[1] = s->symbol_sync_high[0];
         s->symbol_sync_high[0] = v;
 #else
         /* Low Nyquist band edge filter */
-        v = s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0 + s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1 + sample.re;
+        v = s->symbol_sync_low[0]*SYNC_LOW_BAND_EDGE_COEFF_0
+          + s->symbol_sync_low[1]*SYNC_LOW_BAND_EDGE_COEFF_1
+          + sample.re;
         s->symbol_sync_low[1] = s->symbol_sync_low[0];
         s->symbol_sync_low[0] = v;
         /* High Nyquist band edge filter */
-        v = s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0 + s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1 + sample.re;
+        v = s->symbol_sync_high[0]*SYNC_HIGH_BAND_EDGE_COEFF_0
+          + s->symbol_sync_high[1]*SYNC_HIGH_BAND_EDGE_COEFF_1
+          + sample.re;
         s->symbol_sync_high[1] = s->symbol_sync_high[0];
         s->symbol_sync_high[0] = v;
 #endif
@@ -1011,8 +1019,8 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
             sample.im = (v*s->agc_scaling) >> 15;
             z = dds_lookup_complexi16(s->carrier_phase);
-            zz.re = ((int32_t) sample.re*(int32_t) z.re - (int32_t) sample.im*(int32_t) z.im) >> 15;
-            zz.im = ((int32_t) -sample.re*(int32_t) z.im - (int32_t) sample.im*(int32_t) z.re) >> 15;
+            zz.re = ((int32_t) sample.re*z.re - (int32_t) sample.im*z.im) >> 15;
+            zz.im = ((int32_t) -sample.re*z.im - (int32_t) sample.im*z.re) >> 15;
 #else
             v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
             sample.im = v*s->agc_scaling;

@@ -38,9 +38,7 @@
 #include <string.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -62,7 +60,7 @@ int v14_test_async_tx_get_bit(void *user_data)
     async_tx_state_t *s;
     int bit;
     static int destuff = 0;
-    
+
     /* Special routine to test V.14 rate adaption, by randomly skipping
        stop bits. */
     s = (async_tx_state_t *) user_data;
@@ -112,7 +110,7 @@ int v14_test_async_tx_get_bit(void *user_data)
 static int test_get_async_byte(void *user_data)
 {
     int byte;
-    
+
     byte = tx_async_chars & 0xFF;
     tx_async_chars++;
     return byte;
@@ -152,7 +150,7 @@ int main(int argc, char *argv[])
         printf("Test failed.\n");
         exit(2);
     }
-    
+
     printf("Test with async 7E1\n");
     async_tx_init(&tx_async, 7, ASYNC_PARITY_EVEN, 1, false, test_get_async_byte, NULL);
     async_rx_init(&rx_async, 7, ASYNC_PARITY_EVEN, 1, false, test_put_async_byte, NULL);
@@ -242,7 +240,7 @@ int main(int argc, char *argv[])
     }
 
     printf("Tests passed.\n");
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

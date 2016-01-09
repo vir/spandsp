@@ -43,7 +43,6 @@ display of modem status is maintained.
 \section v29_tests_page_sec_2 How is it used?
 */
 
-/* Enable the following definition to enable direct probing into the FAX structures */
 #define WITH_SPANDSP_INTERNALS
 
 #if defined(HAVE_CONFIG_H)
@@ -66,9 +65,7 @@ display of modem status is maintained.
 #include <fenv.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -339,7 +336,7 @@ int main(int argc, char *argv[])
     int rbs_pattern;
     int opt;
     logging_state_t *logging;
-    
+
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
     test_bps = 9600;
@@ -563,7 +560,7 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Final result %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, bert_results.total_bits, bert_results.bad_bits, bert_results.resyncs);
         fprintf(stderr, "Last report  %ddBm0/%ddBm0, %d bits, %d bad bits, %d resyncs\n", signal_level, noise_level, latest_results.total_bits, latest_results.bad_bits, latest_results.resyncs);
         one_way_line_model_release(line_model);
-        
+
         if (signal_level > -43)
         {
             printf("Tests failed.\n");
@@ -592,7 +589,7 @@ int main(int argc, char *argv[])
             exit(2);
         }
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

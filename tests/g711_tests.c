@@ -177,7 +177,7 @@ static void compliance_tests(int log_audio)
         printf("Tests failed\n");
         exit(2);
     }
-    
+
     printf("Cyclic conversion repeatability tests.\n");
     /* Find what happens to every possible linear value after a round trip. */
     for (i = 0;  i < 65536;  i++)
@@ -204,7 +204,7 @@ static void compliance_tests(int log_audio)
             exit(2);
         }
     }
-    
+
     printf("Reference power level tests.\n");
     power_meter_init(&power_meter, 7);
 
@@ -278,7 +278,7 @@ static void compliance_tests(int log_audio)
             }
         }
     }
-    
+
     enc_state = g711_init(NULL, G711_ALAW);
     transcode = g711_init(NULL, G711_ALAW);
     dec_state = g711_init(NULL, G711_ULAW);

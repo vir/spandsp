@@ -41,9 +41,7 @@ then exchanged between them.
 #include <string.h>
 #include <assert.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -192,7 +190,7 @@ int main(int argc, char *argv[])
             bit ^= 1;
         v42_rx_bit(&caller, bit);
     }
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 /*- End of file ------------------------------------------------------------*/

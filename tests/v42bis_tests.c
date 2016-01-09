@@ -46,9 +46,7 @@ of this file should exactly match the original file.
 #include <ctype.h>
 #include <assert.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
@@ -61,7 +59,7 @@ int out_octets_to_date = 0;
 static void frame_handler(void *user_data, const uint8_t *buf, int len)
 {
     int ret;
-    
+
     if ((ret = write((intptr_t) user_data, buf, len)) != len)
         fprintf(stderr, "Write error %d/%d\n", ret, errno);
     out_octets_to_date += len;
@@ -202,7 +200,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "Error opening file '%s'.\n", decompressed_file);
             exit(2);
         }
-    
+
         time(&now);
         v42bis_init(&state_b, 3, 512, 6, frame_handler, (void *) (intptr_t) v42bis_fd, 512, data_handler, (void *) (intptr_t) out_fd, 512);
         span_log_set_level(&state_b.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
