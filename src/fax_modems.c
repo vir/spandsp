@@ -333,6 +333,7 @@ SPAN_DECLARE(logging_state_t *) fax_modems_get_logging_state(fax_modems_state_t 
 
 SPAN_DECLARE(int) fax_modems_restart(fax_modems_state_t *s)
 {
+    s->current_tx_type = -1;
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

@@ -58,6 +58,7 @@
 #include "spandsp/alloc.h"
 #include "spandsp/logging.h"
 #include "spandsp/queue.h"
+#include "spandsp/vector_int.h"
 #include "spandsp/dc_restore.h"
 #include "spandsp/bit_operations.h"
 #include "spandsp/power_meter.h"
@@ -138,6 +139,9 @@
 /*! The number of transmissions of terminating data IFP packets */
 #define DATA_END_TX_COUNT                       3
 
+/*! The number of consecutive flags to declare HDLC framing is OK. */
+#define HDLC_FRAMING_OK_THRESHOLD               5
+
 enum
 {
     DISBIT1 = 0x01,
@@ -177,9 +181,6 @@ enum
 /*! The maximum number of bytes to be zapped, in order to corrupt NSF,
     NSS and NSC messages, so the receiver does not recognise them. */
 #define MAX_NSX_SUPPRESSION             10
-
-/*! The number of consecutive flags to declare HDLC framing is OK. */
-#define HDLC_FRAMING_OK_THRESHOLD       5
 
 static uint8_t nsx_overwrite[2][MAX_NSX_SUPPRESSION] =
 {
@@ -792,26 +793,19 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         uint8_t dcs_code;
     } modem_codes[] =
     {
-        {14400, FAX_MODEM_V17_RX,       DISBIT6},
-        {12000, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4)},
-        { 9600, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT3)},
-        { 9600, FAX_MODEM_V29_RX,       DISBIT3},
+        {14400, FAX_MODEM_V17_RX,       (DISBIT6                    )},
+        {12000, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4          )},
+        { 9600, FAX_MODEM_V17_RX,       (DISBIT6 |           DISBIT3)},
+        { 9600, FAX_MODEM_V29_RX,       (                    DISBIT3)},
         { 7200, FAX_MODEM_V17_RX,       (DISBIT6 | DISBIT4 | DISBIT3)},
-        { 7200, FAX_MODEM_V29_RX,       (DISBIT4 | DISBIT3)},
-        { 4800, FAX_MODEM_V27TER_RX,    DISBIT4},
-        { 2400, FAX_MODEM_V27TER_RX,    0},
-        {    0, FAX_MODEM_NONE,         0}
+        { 7200, FAX_MODEM_V29_RX,       (          DISBIT4 | DISBIT3)},
+        { 4800, FAX_MODEM_V27TER_RX,    (          DISBIT4          )},
+        { 2400, FAX_MODEM_V27TER_RX,    (0                          )},
+        {    0, FAX_MODEM_NONE,         (0                          )}
     };
     static const int minimum_scan_line_times[8] =
     {
-        20,
-        5,
-        10,
-        0,
-        40,
-        0,
-        0,
-        0
+        20,  5, 10,  0, 40,  0,  0,  0
     };
     int dcs_code;
     int i;
@@ -895,7 +889,7 @@ static void monitor_control_messages(t38_gateway_state_t *s,
             /* If we are processing a message from the modem side, the contents determine the fast receive modem.
                we are to use. If it comes from the T.38 side the contents do not. */
             s->core.fast_bit_rate = modem_codes[i].bit_rate;
-            if (from_modem)
+            if ((buf[2] == T30_DTC  &&  !from_modem)  ||  (buf[2] != T30_DTC  &&  from_modem))
                 s->core.fast_rx_modem = modem_codes[i].modem_type;
             /*endif*/
         }
@@ -2030,7 +2024,9 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
                         /*endif*/
                         /* It seems some boxes may not like us sending a _SIG_END here, and then another
                            when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
-                        t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_OK, NULL, 0, category);
+                        if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_OK, NULL, 0, category) < 0)
+                            span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                        /*endif*/
                     }
                     /*endif*/
                 }
@@ -2048,7 +2044,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
             /* Check the flags are back-to-back when testing for valid preamble. This
                greatly reduces the chances of false preamble detection, and anything
                which doesn't send them back-to-back is badly broken. */
-            if (t->num_bits != 7)
+            if (t->flags_seen != t->framing_ok_threshold - 1  &&  t->num_bits != 7)
                 t->flags_seen = 0;
             /*endif*/
             if (++t->flags_seen >= t->framing_ok_threshold  &&  !t->framing_ok_announced)
@@ -2135,7 +2131,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
         if (t->buffer[0] != 0xFF  ||  (t->buffer[1] & 0xEF) != 0x03)
         {
             /* Abandon the frame, and wait for the next flag octet. */
-            /* If this is a real frame where one of these first two octets has a bit
+            /* If this is a real frame, where one of these first two octets has a bit
                error, we will fail to forward the frame with a CRC error, as we do for
                other bad frames. This will affect the timing of what goes forward.
                Hopefully such timing changes will have less frequent bad effects than
@@ -2163,7 +2159,7 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     }
     if (++u->data_ptr >= u->octets_per_data_packet)
     {
-        bit_reverse(u->data, t->buffer + t->len - 2 - u->data_ptr, u->data_ptr);
+        bit_reverse(u->data, &t->buffer[t->len - 2 - u->data_ptr], u->data_ptr);
         category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
         t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_DATA, u->data, u->data_ptr, category);
         /* Since we delay transmission by 2 octets, we should now have sent the last of the data octets when
@@ -2265,15 +2261,15 @@ static void update_rx_timing(t38_gateway_state_t *s, int len)
             {
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_PAST_V21_MODEM:
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
-                s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 announce_training(s);
+                s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_SEEN:
                 /* Timed announcement of training, 75ms after the DCS carrier fell. */
+                announce_training(s);
                 /* Use a timeout to ride over TEP, if it is present */
                 s->core.samples_to_timeout = ms_to_samples(500);
                 s->core.timed_mode = TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED;
-                announce_training(s);
                 break;
             case TIMED_MODE_TCF_PREDICTABLE_MODEM_START_FAST_MODEM_ANNOUNCED:
                 s->core.timed_mode = TIMED_MODE_IDLE;
@@ -2352,7 +2348,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
         if (set_next_tx_type(s))
         {
             /* Give the new handler a chance to file the remaining buffer space */
-            len += s->audio.modems.tx_handler(s->audio.modems.tx_user_data, amp + len, max_len - len);
+            len += s->audio.modems.tx_handler(s->audio.modems.tx_user_data, &amp[len], max_len - len);
             if (len < max_len)
             {
                 silence_gen_set(&s->audio.modems.silence_gen, 0);
@@ -2366,7 +2362,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.transmit_on_idle)
     {
         /* Pad to the requested length with silence */
-        memset(amp + len, 0, (max_len - len)*sizeof(int16_t));
+        vec_zeroi16(&amp[len], max_len - len);
         len = max_len;
     }
     /*endif*/
@@ -2374,7 +2370,7 @@ SPAN_DECLARE_NONSTD(int) t38_gateway_tx(t38_gateway_state_t *s, int16_t amp[], i
     if (s->audio.modems.audio_tx_log >= 0)
     {
         if (len < required_len)
-            memset(amp + len, 0, (required_len - len)*sizeof(int16_t));
+            vec_zeroi16(&amp[len], required_len - len);
         /*endif*/
         write(s->audio.modems.audio_tx_log, amp, required_len*sizeof(int16_t));
     }
