@@ -1670,12 +1670,12 @@ static int step_fallback_entry(t30_state_t *s)
 {
     int min_row_bits;
 
-    while (fallback_sequence[++s->current_fallback].which)
+    while (fallback_sequence[++s->current_fallback].bit_rate)
     {
         if ((fallback_sequence[s->current_fallback].which & s->current_permitted_modems))
             break;
     }
-    if (fallback_sequence[s->current_fallback].which == 0)
+    if (fallback_sequence[s->current_fallback].bit_rate == 0)
         return -1;
     /* TODO: This only sets the minimum row time for future pages. It doesn't fix up the
              current page, though it is benign - fallback will only result in an excessive
@@ -2704,6 +2704,7 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         terminate_call(s);
         return;
     }
+    s->retries = 0;
     /* Check which frames are OK, and mark them as OK. */
     for (i = 0;  i < 32;  i++)
     {
@@ -2737,8 +2738,9 @@ static void process_rx_ppr(t30_state_t *s, const uint8_t *msg, int len)
         /* Continue to correct? */
         /* Continue only if we have been making progress */
         s->ppr_count = 0;
-        if (s->ecm_progress)
+        if (s->ecm_progress  &&  fallback_sequence[s->current_fallback + 1].bit_rate)
         {
+            s->current_fallback++;
             s->ecm_progress = 0;
             queue_phase(s, T30_PHASE_D_TX);
             set_state(s, T30_STATE_IV_CTC);
