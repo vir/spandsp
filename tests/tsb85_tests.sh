@@ -33,13 +33,7 @@ do
     run_tsb85_test
 done
 
-#MRGN14 fails because we don't adequately distinguish between receiving a
-#bad image signal and receiving none at all.
-#MRGN16 fails because we don't adequately distinguish between receiving a
-#bad image signal and receiving none at all.
-
-#for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17
-for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN15 MRGN17
+for TEST in MRGN09 MRGN10 MRGN11 MRGN12 MRGN13 MRGN14 MRGN15 MRGN16 MRGN17
 do
     run_tsb85_test
 done
@@ -54,12 +48,7 @@ do
     run_tsb85_test
 done
 
-# MRGX03 is failing because the V.27ter modem says it trained on HDLC
-# MRGX05 is failing because we don't distinguish MPS immediately after MCF from MPS after
-# a corrupt image signal.
-
-#for TEST in MRGX01 MRGX02 MRGX03 MRGX04 MRGX05 MRGX06 MRGX07 MRGX08
-for TEST in MRGX01 MRGX02 MRGX04 MRGX06 MRGX07 MRGX08
+for TEST in MRGX01 MRGX02 MRGX03 MRGX04 MRGX05 MRGX06 MRGX07 MRGX08
 do
     run_tsb85_test
 done
@@ -104,18 +93,12 @@ do
     run_tsb85_test
 done
 
-#OTEN02 fails because ?????
-
-#for TEST in OTEN01 OTEN02 OTEN03 OTEN04 OTEN05 OTEN06
-for TEST in OTEN01 OTEN03 OTEN04 OTEN05 OTEN06
+for TEST in OTEN01 OTEN02 OTEN03 OTEN04 OTEN05 OTEN06
 do
     run_tsb85_test
 done
 
-#MTGX02 fails because ?????
-
-#for TEST in MTGX01 MTGX02 MTGX03 MTGX04 MTGX05 MTGX06 MTGX07 MTGX08
-for TEST in MTGX01 MTGX03 MTGX04 MTGX05 MTGX06 MTGX07 MTGX08
+for TEST in MTGX01 MTGX02 MTGX03 MTGX04 MTGX05 MTGX06 MTGX07 MTGX08
 do
     run_tsb85_test
 done

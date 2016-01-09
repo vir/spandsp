@@ -33,6 +33,7 @@
 #include "config.h"
 #endif
 
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -62,7 +63,7 @@
 #define IN_FILE_NAME    "super_tone.wav"
 
 #define MITEL_DIR       "../test-data/mitel/"
-#define BELLCORE_DIR	"../test-data/bellcore/"
+#define BELLCORE_DIR    "../test-data/bellcore/"
 
 const char *bellcore_files[] =
 {
@@ -198,7 +199,7 @@ static int parse_tone(super_tone_rx_descriptor_t *desc, int tone_id, super_tone_
         cur = cur->next;
     }
     /*endwhile*/
-    return  0;
+    return 0;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -267,32 +268,39 @@ static void parse_tone_set(super_tone_rx_descriptor_t *desc, xmlDocPtr doc, xmlN
 
 static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file, const char *set_id)
 {
+    xmlParserCtxtPtr ctxt;
     xmlDocPtr doc;
     xmlNsPtr ns;
     xmlNodePtr cur;
-#if 1
-    xmlValidCtxt valid;
-#endif
     xmlChar *x;
-    
+
     ns = NULL;
     xmlKeepBlanksDefault(0);
     xmlCleanupParser();
-    if ((doc = xmlParseFile(tone_file)) == NULL)
+
+    if ((ctxt = xmlNewParserCtxt()) == NULL)
     {
-        fprintf(stderr, "No document\n");
+        fprintf(stderr, "Failed to allocate parser context\n");
+        printf("Test failed\n");
         exit(2);
     }
-    /*endif*/
-    xmlXIncludeProcess(doc);
-#if 1
-    if (!xmlValidateDocument(&valid, doc))
+    /* parse the file, activating the DTD validation option */
+    if ((doc = xmlCtxtReadFile(ctxt, tone_file, NULL, XML_PARSE_XINCLUDE | XML_PARSE_DTDVALID)) == NULL)
     {
-        fprintf(stderr, "Invalid document\n");
+        fprintf(stderr, "Failed to read the XML document\n");
+        printf("Test failed\n");
         exit(2);
     }
-    /*endif*/
-#endif
+    if (ctxt->valid == 0)
+    {
+        fprintf(stderr, "Failed to validate the XML document\n");
+    	xmlFreeDoc(doc);
+        xmlFreeParserCtxt(ctxt);
+        printf("Test failed\n");
+        exit(2);
+    }
+    xmlFreeParserCtxt(ctxt);
+
     /* Check the document is of the right kind */
     if ((cur = xmlDocGetRootElement(doc)) == NULL)
     {
@@ -338,7 +346,7 @@ static void get_tone_set(super_tone_rx_descriptor_t *desc, const char *tone_file
 static void super_tone_rx_fill_descriptor(super_tone_rx_descriptor_t *desc)
 {
     int tone_id;
-    
+
     tone_id = super_tone_rx_add_tone(desc);
     super_tone_rx_add_element(desc, tone_id, 400, 0, 700, 0);
     tone_names[tone_id] = "XXX";
@@ -394,12 +402,12 @@ static int talk_off_tests(super_tone_rx_state_t *super)
                 x = super_tone_rx(super, amp + sample, frames - sample);
                 sample += x;
             }
-    	}
+        }
         if (sf_close_telephony(inhandle))
-    	{
-    	    printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
+        {
+            printf("    Cannot close speech file '%s'\n", bellcore_files[j]);
             exit(2);
-    	}
+        }
     }
     return 0;
 }

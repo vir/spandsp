@@ -70,7 +70,7 @@ struct v27ter_rx_state_s
     void *qam_user_data;
 
 #if defined(SPANDSP_USE_FIXED_POINT)
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     int16_t agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     int16_t agc_scaling_save;
@@ -95,7 +95,7 @@ struct v27ter_rx_state_s
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     int16_t rrc_filter[V27TER_RX_FILTER_STEPS];
 #else
-    /*! \brief The scaling factor accessed by the AGC algorithm. */
+    /*! \brief The scaling factor assessed by the AGC algorithm. */
     float agc_scaling;
     /*! \brief The previous value of agc_scaling, needed to reuse old training. */
     float agc_scaling_save;
@@ -158,7 +158,7 @@ struct v27ter_rx_state_s
     /*! \brief The carrier update rate saved for reuse when using short training. */
     int32_t carrier_phase_rate_save;
 
-    /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */    
+    /*! \brief A power meter, to measure the HPF'ed signal power in the channel. */
     power_meter_t power;
     /*! \brief The power meter level at which carrier on is declared. */
     int32_t carrier_on_power;
@@ -183,10 +183,11 @@ struct v27ter_rx_state_s
                This is only for performance analysis purposes. */
     int total_baud_timing_correction;
 
-    /*! \brief Starting phase angles for the coarse carrier aquisition step. */
-    int32_t start_angles[2];
-    /*! \brief History list of phase angles for the coarse carrier aquisition step. */
-    int32_t angles[16];
+    /*! \brief The previous symbol phase angles for the coarse carrier aquisition step. */
+    int32_t last_angles[2];
+    /*! \brief History list of phase angle differences for the coarse carrier aquisition step. */
+    int32_t diff_angles[16];
+
     /*! \brief Error and flow logging control */
     logging_state_t logging;
 };
