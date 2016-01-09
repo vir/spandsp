@@ -282,7 +282,6 @@ struct t30_state_s
 
     /*! \brief The last result for a received non-ECM page - T30_MPS, T30_RTP, or T30_RTN. */
     int last_rx_page_result;
-
     /*! \brief The transmission step queued to follow the one in progress. */
     int next_tx_step;
     /*! \brief The FCF for the next receive step. */

@@ -32,6 +32,7 @@
 #include <inttypes.h>
 
 #include "spandsp/telephony.h"
+#include "spandsp/alloc.h"
 #include "spandsp/complex.h"
 #include "spandsp/complex_filters.h"
 

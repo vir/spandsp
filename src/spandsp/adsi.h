@@ -429,6 +429,12 @@ SPAN_DECLARE(int) adsi_rx_free(adsi_rx_state_t *s);
 */
 SPAN_DECLARE(int) adsi_rx(adsi_rx_state_t *s, const int16_t amp[], int len);
 
+/*! Get the logging context associated with an ADSI transmit context.
+    \brief Get the logging context associated with an ADSI transmit context.
+    \param s The ADSI transmit context.
+    \return A pointer to the logging context */
+SPAN_DECLARE(logging_state_t *) adsi_tx_get_logging_state(adsi_tx_state_t *s);
+
 /*! \brief Initialise an ADSI transmit context.
     \param s The ADSI transmit context.
     \param standard The code for the ADSI standard to be used.

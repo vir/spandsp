@@ -56,8 +56,10 @@
 #include "floating_fudge.h"
 
 #include "spandsp/telephony.h"
-#include "spandsp/alloc.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
+#include "spandsp/math_fixed.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -135,14 +137,6 @@ static const uint8_t phase_steps[4] =
     1, 0, 2, 3
 };
 
-static const uint8_t ones[] =
-{
-    0, 1, 1, 2,
-    1, 2, 2, 3,
-    1, 2, 2, 3,
-    2, 3, 3, 4
-};
-
 SPAN_DECLARE(float) v22bis_rx_carrier_frequency(v22bis_state_t *s)
 {
     return dds_frequencyf(s->rx.carrier_phase_rate);
@@ -177,7 +171,11 @@ void v22bis_report_status_change(v22bis_state_t *s, int status)
 }
 /*- End of function --------------------------------------------------------*/
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexi16_t **coeffs)
+#else
 SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coeffs)
+#endif
 {
     *coeffs = s->rx.eq_coeff;
     return 2*V22BIS_EQUALIZER_LEN + 1;

@@ -75,7 +75,11 @@ int main(int argc, char *argv[])
         clip_high = 0;
         clip_low = 0;
         total = 0.0;
-        noise_source = awgn_init_dbm0(NULL, idum, (float) j);
+        if ((noise_source = awgn_init_dbm0(NULL, idum, (float) j)) == NULL)
+        {
+            printf("Failed to allocate AWGN source\n");
+            exit(2);
+        }
         total_samples = 1000000;
         for (i = 0;  i < total_samples;  i++)
         {
@@ -99,6 +103,7 @@ int main(int argc, char *argv[])
             printf("Test failed.\n");
             exit(2);
         }
+        awgn_free(noise_source);
     }
     /* Now look at the statistical spread of the results, by collecting data in
        bins from a large number of samples. Use a fairly high noise level, but
@@ -107,7 +112,11 @@ int main(int argc, char *argv[])
     memset(bins, 0, sizeof(bins));
     clip_high = 0;
     clip_low = 0;
-    awgn_init_dbm0(noise_source, idum, -15);
+    if ((noise_source = awgn_init_dbm0(NULL, idum, -15.0)) == NULL)
+    {
+        printf("Failed to allocate AWGN source\n");
+        exit(2);
+    }
     total_samples = 10000000;
     for (i = 0;  i < total_samples;  i++)
     {

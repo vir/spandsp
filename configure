@@ -17562,6 +17562,18 @@ fi
 
 done
 
+for ac_header in stdfix.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "stdfix.h" "ac_cv_header_stdfix_h" "$ac_includes_default"
+if test "x$ac_cv_header_stdfix_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_STDFIX_H 1
+_ACEOF
+
+fi
+
+done
+
 for ac_header in unistd.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "unistd.h" "ac_cv_header_unistd_h" "$ac_includes_default"

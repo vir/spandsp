@@ -123,10 +123,6 @@ will be compressed to GSM 06.10 data, decompressed, and the resulting audio stor
 #include <ctype.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -325,7 +321,7 @@ static int perform_linear_test(int full, int disk, const char *name)
                 mismatches++;
             }
         }
-        gsm0610_release(gsm0610_enc_state);
+        gsm0610_free(gsm0610_enc_state);
         if (mismatches)
         {
             printf("Test failed: %d of %d samples mismatch\n", mismatches, xxx);
@@ -354,7 +350,7 @@ static int perform_linear_test(int full, int disk, const char *name)
         printf("Test failed: %d of %d samples mismatch\n", mismatches, vector_len);
         exit(2);
     }
-    gsm0610_release(gsm0610_dec_state);
+    gsm0610_free(gsm0610_dec_state);
     printf("Test passed\n");
     return 0;
 }
@@ -409,7 +405,7 @@ static int perform_law_test(int full, int law, const char *name)
             exit(2);
         }
         printf("Test passed\n");
-        gsm0610_release(gsm0610_enc_state);
+        gsm0610_free(gsm0610_enc_state);
     }
 
     if ((gsm0610_dec_state = gsm0610_init(NULL, GSM0610_PACKING_NONE)) == NULL)
@@ -442,7 +438,7 @@ static int perform_law_test(int full, int law, const char *name)
         printf("Test failed: %d of %d samples mismatch\n", mismatches, vector_len);
         exit(2);
     }
-    gsm0610_release(gsm0610_dec_state);
+    gsm0610_free(gsm0610_dec_state);
     printf("Test passed\n");
     return 0;
 }
@@ -453,8 +449,8 @@ static int repack_gsm0610_voip_to_wav49(uint8_t c[], const uint8_t d[])
     gsm0610_frame_t frame[2];
     int n;
 
-	n = gsm0610_unpack_voip(&frame[0], d);
-	gsm0610_unpack_voip(&frame[1], d + n);
+    n = gsm0610_unpack_voip(&frame[0], d);
+    gsm0610_unpack_voip(&frame[1], d + n);
     n = gsm0610_pack_wav49(c, frame);
     return n;
 }
@@ -617,8 +613,8 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);
         }
-        gsm0610_release(gsm0610_enc_state);
-        gsm0610_release(gsm0610_dec_state);
+        gsm0610_free(gsm0610_enc_state);
+        gsm0610_free(gsm0610_dec_state);
     }
     return 0;
 }

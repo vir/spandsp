@@ -70,13 +70,13 @@ int main(int argc, char *argv[])
     int block_len;
     int loss_rate;
     int dropit;
-    int block_real;
-    int block_synthetic;
     int tone;
     int i;
+    int opt;
+    int block_real;
+    int block_synthetic;
     uint32_t phase_acc;
     int32_t phase_rate;
-    int opt;
 
     loss_rate = 25;
     block_len = 160;

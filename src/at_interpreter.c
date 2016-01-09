@@ -463,7 +463,6 @@ static int parse_hex_num(const char **s, int max_value)
 
     /* The spec. says a hex value is always 2 digits, and the alpha digits are
        upper case. */
-    i = 0;
     if (isdigit((int) **s))
         i = **s - '0';
     else if (**s >= 'A'  &&  **s <= 'F')
@@ -726,11 +725,18 @@ static int parse_string_list_out(at_state_t *s, const char **t, int *target, int
         val = (target)  ?  *target  :  0;
         while (val--  &&  (def = strchr(def, ',')))
             def++;
-        if ((tmp = strchr(def, ',')))
-            len = tmp - def;
+        if (def)
+        {
+            if ((tmp = strchr(def, ',')))
+                len = tmp - def;
+            else
+                len = strlen(def);
+            snprintf(buf, sizeof(buf), "%s%.*s", (prefix)  ?  prefix  :  "", (int) len, def);
+        }
         else
-            len = strlen(def);
-        snprintf(buf, sizeof(buf), "%s%.*s", (prefix)  ?  prefix  :  "", (int) len, def);
+        {
+            buf[0] = '\0';
+        }
         at_put_response(s, buf);
         break;
     default:
@@ -771,8 +777,8 @@ static int parse_string_out(at_state_t *s, const char **t, char **target, const 
     default:
         return false;
     }
-    while (*t)
-        t++;
+    while (**t)
+        (*t)++;
     return true;
 }
 /*- End of function --------------------------------------------------------*/
@@ -905,7 +911,6 @@ static const char *at_cmd_dummy(at_state_t *s, const char *t)
 static const char *at_cmd_A(at_state_t *s, const char *t)
 {
     /* V.250 6.3.5 - Answer (abortable) */
-    t += 1;
     if (!answer_call(s))
         return NULL;
     return (const char *) -1;
@@ -914,7 +919,6 @@ static const char *at_cmd_A(at_state_t *s, const char *t)
 
 static const char *at_cmd_D(at_state_t *s, const char *t)
 {
-    int ok;
     char *u;
     char num[100 + 1];
     char ch;
@@ -925,7 +929,6 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
     s->silent_dial = false;
     s->command_dial = false;
     t += 1;
-    ok = false;
     /* There are a numbers of options in a dial command string.
        Many are completely irrelevant in this application. */
     u = num;
@@ -1017,7 +1020,7 @@ static const char *at_cmd_D(at_state_t *s, const char *t)
         }
     }
     *u = '\0';
-    if ((ok = at_modem_control(s, AT_MODEM_CONTROL_CALL, num)) < 0)
+    if (at_modem_control(s, AT_MODEM_CONTROL_CALL, num) < 0)
         return NULL;
     /* Dialing should now be in progress. No AT response should be
        issued at this point. */
@@ -3708,6 +3711,10 @@ static const char *at_cmd_plus_FLO(at_state_t *s, const char *t)
         1:  XON/XOFF.
         2:  Hardware (default) */
     t += 4;
+    span_log(&s->logging, SPAN_LOG_FLOW, "+FLO received\n");
+    //if (!parse_out(s, &t, &s->dte_dce_flow_control, 2, "+FLO:", "(0-2)"))
+    //    return NULL;
+    //s->dce_dte_flow_control = s->dte_dce_flow_control;
     return t;
 }
 /*- End of function --------------------------------------------------------*/
@@ -5403,7 +5410,7 @@ static int command_search(const char *u, int *matched)
 
     entry = 0;
     /* Loop over the length of the string to search the trie... */
-    for (i = 0, ptr = 0;  ptr < COMMAND_TRIE_LEN;  i++)
+    for (i = 0, ptr = 0;  ptr < COMMAND_TRIE_LEN - 2;  i++)
     {
         /* The character in u we are processing... */
         /* V.250 5.4.1 says upper and lower case are equivalent in commands */
@@ -5528,6 +5535,9 @@ SPAN_DECLARE(void) at_interpreter(at_state_t *s, const char *cmd, int len)
                     {
                         if ((entry = command_search(t, &matched)) <= 0)
                             break;
+                        /* The following test shouldn't be needed, but let's keep it here for completeness. */
+                        if (entry > sizeof(at_commands)/sizeof(at_commands[0]))
+                            break;
                         if ((t = at_commands[entry - 1](s, t)) == NULL)
                             break;
                         if (t == (const char *) -1)
@@ -5574,6 +5584,15 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(void) at_set_modem_control_handler(at_state_t *s,
+                                                at_modem_control_handler_t modem_control_handler,
+                                                void *modem_control_user_data)
+{
+    s->modem_control_handler = modem_control_handler;
+    s->modem_control_user_data = modem_control_user_data;
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(logging_state_t *) at_get_logging_state(at_state_t *s)
 {
     return &s->logging;
@@ -5601,6 +5620,8 @@ SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
     s->call_id = NULL;
     s->local_id = NULL;
     s->display_call_info = 0;
+    //s->dte_dce_flow_control = 2;
+    //s->dce_dte_flow_control = 2;
     at_set_at_rx_mode(s, AT_MODE_ONHOOK_COMMAND);
     s->p = profiles[0];
     return s;

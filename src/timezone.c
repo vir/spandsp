@@ -44,12 +44,12 @@
 #include <string.h>
 #include <time.h>
 #include <stdlib.h>
-#include <assert.h>
 #if defined(HAVE_STDBOOL_H)
 #include <stdbool.h>
 #else
 #include "spandsp/stdbool.h"
 #endif
+#include <assert.h>
 
 #include "spandsp/telephony.h"
 #include "spandsp/alloc.h"
@@ -643,7 +643,6 @@ static int tzparse(const char *name, struct tz_state_s * const sp, const int las
             }
             /* Initially we're assumed to be in standard time. */
             isdst = false;
-            theiroffset = theirstdoffset;
             /* Now juggle transition times and types tracking offsets as you do. */
             for (i = 0;  i < sp->timecnt;  i++)
             {

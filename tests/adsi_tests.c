@@ -45,8 +45,6 @@ tests, these tests do not include line modelling.
 #include <assert.h>
 #include <sndfile.h>
 
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -803,10 +801,10 @@ int main(int argc, char *argv[])
             current_standard = test_standard;
 
         rx_adsi = adsi_rx_init(NULL, current_standard, put_adsi_msg, NULL);
-#if 0
-        span_log_set_level(rx_adsi.logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-        span_log_set_tag(rx_adsi.logging, "ADSI");
-#endif
+
+        span_log_set_level(adsi_rx_get_logging_state(rx_adsi), SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(adsi_rx_get_logging_state(rx_adsi), "ADSI");
+
         for (;;)
         {
             len = sf_readf_short(inhandle, amp, BLOCK_LEN);

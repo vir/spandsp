@@ -83,14 +83,14 @@ struct faxtester_state_s
     int image_len;
     int image_ptr;
     int image_bit_ptr;
-    
+
     int ecm_frame_size;
     int corrupt_crc;
-    
+
     int final_delayed;
 
     fax_modems_state_t modems;
-    
+
     /*! If TRUE, transmission is in progress */
     int transmit;
 
@@ -103,7 +103,7 @@ struct faxtester_state_s
     int current_tx_type;
 
     int wait_for_silence;
-    
+
     int tone_state;
     int64_t tone_on_time;
 

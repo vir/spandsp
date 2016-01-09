@@ -1,11 +1,11 @@
 /*
  * SpanDSP - a series of DSP components for telephony
  *
- * fax_tests.c
+ * fax_tests.c - Tests for the audio and T.38 FAX modules.
  *
  * Written by Steve Underwood <steveu@coppice.org>
  *
- * Copyright (C) 2003 Steve Underwood
+ * Copyright (C) 2005, 2006, 2009, 2010 Steve Underwood
  *
  * All rights reserved.
  *
@@ -23,6 +23,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
+/*! \file */
+
 /*! \page fax_tests_page FAX tests
 \section fax_tests_page_sec_1 What does it do?
 \section fax_tests_page_sec_2 How does it work?
@@ -32,21 +34,44 @@
 #include "config.h"
 #endif
 
+#if defined(HAVE_FL_FL_H)  &&  defined(HAVE_FL_FL_CARTESIAN_H)  &&  defined(HAVE_FL_FL_AUDIO_METER_H)
+#define ENABLE_GUI
+#endif
+
 #include <stdlib.h>
+#include <inttypes.h>
 #include <stdio.h>
-#include <unistd.h>
+#include <fcntl.h>
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
 #include <sndfile.h>
+#if !defined(_WIN32)
+#include <unistd.h>
+#endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
+#if defined(HAVE_LIBXML_XMLMEMORY_H)
+#include <libxml/xmlmemory.h>
+#endif
+#if defined(HAVE_LIBXML_PARSER_H)
+#include <libxml/parser.h>
+#endif
+#if defined(HAVE_LIBXML_XINCLUDE_H)
+#include <libxml/xinclude.h>
+#endif
+
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
+#include "udptl.h"
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
+#if defined(ENABLE_GUI)
+#include "media_monitor.h"
+#endif
+#include "fax_tester.h"
 #include "fax_utils.h"
+#include "pcap_parse.h"
 
 #define SAMPLES_PER_CHUNK       160
 

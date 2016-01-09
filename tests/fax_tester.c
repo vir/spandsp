@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #if defined(HAVE_TGMATH_H)
 #include <tgmath.h>
 #endif
@@ -55,12 +56,11 @@
 #include <libxml/xinclude.h>
 #endif
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 
+#include "fax_utils.h"
 #include "fax_tester.h"
 
 #define HDLC_FRAMING_OK_THRESHOLD       5

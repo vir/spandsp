@@ -5003,6 +5003,14 @@ static void repeat_last_command(t30_state_t *s)
         queue_phase(s, T30_PHASE_B_TX);
         send_dcs_sequence(s, true);
         break;
+    case T30_STATE_F_POST_RCP_PPR:
+        queue_phase(s, T30_PHASE_D_TX);
+        send_frame(s, s->ecm_frame_map, 3 + 32);
+        break;
+    case T30_STATE_F_POST_RCP_MCF:
+        queue_phase(s, T30_PHASE_D_TX);
+        send_simple_frame(s, T30_MCF);
+        break;
     case T30_STATE_F_POST_RCP_RNR:
         /* Just ignore */
         break;

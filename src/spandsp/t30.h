@@ -184,13 +184,13 @@ typedef void (t30_phase_e_handler_t)(t30_state_t *s, void *user_data, int comple
     \brief T.30 real time frame handler.
     \param s The T.30 context.
     \param user_data An opaque pointer.
-    \param direction True for incoming, false for outgoing.
+    \param incoming True for incoming, false for outgoing.
     \param msg The HDLC message.
     \param len The length of the message.
 */
 typedef void (t30_real_time_frame_handler_t)(t30_state_t *s,
                                              void *user_data,
-                                             int direction,
+                                             int incoming,
                                              const uint8_t msg[],
                                              int len);
 

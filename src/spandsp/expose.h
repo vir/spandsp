@@ -48,6 +48,7 @@
 #include <spandsp/private/g726.h>
 #include <spandsp/private/lpc10.h>
 #include <spandsp/private/gsm0610.h>
+#include <spandsp/private/plc.h>
 #include <spandsp/private/playout.h>
 #include <spandsp/private/oki_adpcm.h>
 #include <spandsp/private/ima_adpcm.h>

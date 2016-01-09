@@ -895,6 +895,10 @@ SOURCE=.\spandsp/private/playout.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\spandsp/private/plc.h
+# End Source File
+# Begin Source File
+
 SOURCE=.\spandsp/private/power_meter.h
 # End Source File
 # Begin Source File

@@ -752,8 +752,7 @@ SPAN_DECLARE_NONSTD(int) v8_tx(v8_state_t *s, int16_t *amp, int max_len)
     }
     if (s->fsk_tx_on  &&  len < max_len)
     {
-        max_len -= len;
-        len = fsk_tx(&s->v21tx, amp + len, max_len);
+        len += fsk_tx(&s->v21tx, &amp[len], max_len - len);
         if (len < max_len)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "FSK ends\n");

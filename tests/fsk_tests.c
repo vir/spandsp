@@ -51,10 +51,6 @@ These tests allow either:
 #include <assert.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
-#define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
-
 #include "spandsp.h"
 #include "spandsp-sim.h"
 
@@ -190,14 +186,14 @@ int main(int argc, char *argv[])
     int modem_under_test_1;
     int modem_under_test_2;
     int modems_set;
-    int log_audio;
     int channel_codec;
     int rbs_pattern;
     int on_at;
     int off_at;
+    int opt;
+    int log_audio;
     tone_gen_descriptor_t tone_desc;
     tone_gen_state_t tone_tx;
-    int opt;
 
     channel_codec = MUNGE_CODEC_NONE;
     rbs_pattern = 0;
@@ -300,6 +296,7 @@ int main(int argc, char *argv[])
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
         }
+        fsk_rx_free(caller_rx);
     }
     else
     {
@@ -361,6 +358,7 @@ int main(int argc, char *argv[])
             printf("Tests failed.\n");
             exit(2);
         }
+        fsk_rx_free(caller_rx);
 
         printf("Test with BERT\n");
         test_bps = preset_fsk_specs[modem_under_test_1].baud_rate;
@@ -495,6 +493,7 @@ int main(int argc, char *argv[])
                     fsk_rx_set_modem_status_handler(caller_rx, rx_status, (void *) &caller_rx);
                 }
                 noise_level++;
+                both_ways_line_model_free(model);
                 if ((model = both_ways_line_model_init(line_model_no,
                                                        (float) noise_level,
                                                        line_model_no,
@@ -515,6 +514,19 @@ int main(int argc, char *argv[])
                 bert_set_report(&answerer_bert, 100000, reporter, (void *) (intptr_t) 2);
             }
         }
+        bert_release(&caller_bert);
+        bert_release(&answerer_bert);
+        if (modem_under_test_1 >= 0)
+        {
+            fsk_tx_free(caller_tx);
+            fsk_rx_free(answerer_rx);
+        }
+        if (modem_under_test_2 >= 0)
+        {
+            fsk_tx_free(answerer_tx);
+            fsk_rx_free(caller_rx);
+        }
+        both_ways_line_model_free(model);
         printf("Tests passed.\n");
     }
     if (log_audio)

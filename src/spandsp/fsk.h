@@ -109,9 +109,9 @@ enum
     FSK_BELL103CH1,
     FSK_BELL103CH2,
     FSK_BELL202,
-    FSK_WEITBRECHT,     /* 45.45 baud version, used for TDD (Telecom Device for the Deaf) */
-    FSK_WEITBRECHT50,   /* 50 baud version, used for TDD (Telecom Device for the Deaf) */
-    FSK_V21CH1_110      /* 110 bps version of V.21 channel 1, as used by V.18 */
+    FSK_WEITBRECHT,         /* 45.45 baud version, used for TDD (Telecom Device for the Deaf) */
+    FSK_WEITBRECHT50,       /* 50 baud version, used for TDD (Telecom Device for the Deaf) */
+    FSK_V21CH1_110          /* 110 bps version of V.21 channel 1, as used by V.18 */
 };
 
 enum

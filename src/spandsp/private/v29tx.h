@@ -66,6 +66,7 @@ struct v29_tx_state_s
     /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
     complexf_t rrc_filter[2*V29_TX_FILTER_STEPS];
 #endif
+
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 

@@ -43,9 +43,7 @@
 #include <time.h>
 #include <sndfile.h>
 
-//#if defined(WITH_SPANDSP_INTERNALS)
 #define SPANDSP_EXPOSE_INTERNAL_STRUCTURES
-//#endif
 
 #include "spandsp.h"
 #include "spandsp-sim.h"
@@ -90,6 +88,8 @@ static void complexify_tests(void)
         out[2*i] = cc.re;
         out[2*i + 1] = cc.im;
     }
+    awgn_release(&noise1);
+    complexify_free(s);
     outframes = sf_writef_short(outhandle, out, 20000);
     if (outframes != 20000)
     {
@@ -185,7 +185,7 @@ static void test_one_way_model(int line_model_no, int speech_test)
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME1);
         exit(2);
     }
-    one_way_line_model_release(model);
+    one_way_line_model_free(model);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -304,7 +304,7 @@ static void test_both_ways_model(int line_model_no, int speech_test)
         fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME2);
         exit(2);
     }
-    both_ways_line_model_release(model);
+    both_ways_line_model_free(model);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -365,8 +365,8 @@ static void test_line_filter(int line_model_no)
 int main(int argc, char *argv[])
 {
     int line_model_no;
-    int speech_test;
     int opt;
+    int speech_test;
 
     channel_codec = MUNGE_CODEC_NONE;
     line_model_no = 0;
