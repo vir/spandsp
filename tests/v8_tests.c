@@ -90,7 +90,6 @@ static void handler(void *user_data, v8_parms_t *result)
     case V8_STATUS_IN_PROGRESS:
         printf("V.8 negotiation in progress\n");
         return;
-        break;
     case V8_STATUS_V8_OFFERED:
         printf("V.8 offered by the other party\n");
         break;
@@ -514,7 +513,6 @@ int main(int argc, char *argv[])
 {
     int16_t amp[SAMPLES_PER_CHUNK];
     int samples;
-    int remnant;
     int caller_available_modulations;
     int answerer_available_modulations;
     SNDFILE *inhandle;
@@ -622,10 +620,10 @@ int main(int argc, char *argv[])
 
         while ((samples = sf_readf_short(inhandle, amp, SAMPLES_PER_CHUNK)))
         {
-            remnant = v8_rx(v8_caller, amp, samples);
-            remnant = v8_rx(v8_answerer, amp, samples);
-            remnant = v8_tx(v8_caller, amp, samples);
-            remnant = v8_tx(v8_answerer, amp, samples);
+            v8_rx(v8_caller, amp, samples);
+            v8_rx(v8_answerer, amp, samples);
+            v8_tx(v8_caller, amp, samples);
+            v8_tx(v8_answerer, amp, samples);
         }
         /*endwhile*/
 

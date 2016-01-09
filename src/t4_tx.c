@@ -107,6 +107,52 @@
 /*! The number of EOLs to be sent at the end of a T.6 page */
 #define EOLS_TO_END_T6_TX_PAGE      2
 
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+/* TIFF-FX related extensions to the tag set supported by libtiff */
+static const TIFFFieldInfo tiff_fx_tiff_field_info[] =
+{
+    {TIFFTAG_INDEXED, 1, 1, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "Indexed"},
+    {TIFFTAG_GLOBALPARAMETERSIFD, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "GlobalParametersIFD"},
+    {TIFFTAG_PROFILETYPE, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ProfileType"},
+    {TIFFTAG_FAXPROFILE, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "FaxProfile"},
+    {TIFFTAG_CODINGMETHODS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "CodingMethods"},
+    {TIFFTAG_VERSIONYEAR, 4, 4, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "VersionYear"},
+    {TIFFTAG_MODENUMBER, 1, 1, TIFF_BYTE, FIELD_CUSTOM, FALSE, FALSE, (char *) "ModeNumber"},
+    {TIFFTAG_DECODE, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_SRATIONAL, FIELD_CUSTOM, FALSE, FALSE, (char *) "Decode"},
+    {TIFFTAG_IMAGEBASECOLOR, TIFF_SPP, TIFF_SPP, TIFF_SHORT, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageBaseColor"},
+    {TIFFTAG_T82OPTIONS, 1, 1, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "T82Options"},
+    {TIFFTAG_STRIPROWCOUNTS, TIFF_VARIABLE, TIFF_VARIABLE, TIFF_LONG, FIELD_CUSTOM, FALSE, TRUE, (char *) "StripRowCounts"},
+    {TIFFTAG_IMAGELAYER, 2, 2, TIFF_LONG, FIELD_CUSTOM, FALSE, FALSE, (char *) "ImageLayer"},
+};
+
+static TIFFExtendProc _ParentExtender = NULL;
+
+static void TIFFFXDefaultDirectory(TIFF *tif)
+{
+    /* Install the extended tag field info */
+    TIFFMergeFieldInfo(tif, tiff_fx_tiff_field_info, 11);
+
+    /* Since we may have overriddden another directory method, we call it now to
+       allow it to set up the rest of its own methods. */
+    if (_ParentExtender) 
+        (*_ParentExtender)(tif);
+}
+/*- End of function --------------------------------------------------------*/
+
+SPAN_DECLARE(void) TIFF_FX_init(void)
+{
+    static int first_time = TRUE;
+    
+    if (!first_time)
+        return;
+    first_time = FALSE;
+    
+    /* Grab the inherited method and install */
+    _ParentExtender = TIFFSetTagExtender(TIFFFXDefaultDirectory);
+}
+/*- End of function --------------------------------------------------------*/
+#endif
+
 #if defined(T4_STATE_DEBUGGING)
 static void STATE_TRACE(const char *format, ...)
 {
@@ -399,7 +445,7 @@ static void make_header(t4_state_t *s, char *header)
 }
 /*- End of function --------------------------------------------------------*/
 
-static int t4_tx_put_fax_header(t4_state_t *s, int *rows)
+static int t4_tx_put_fax_header(t4_state_t *s)
 {
     int row;
     int i;
@@ -435,7 +481,6 @@ static int t4_tx_put_fax_header(t4_state_t *s, int *rows)
         repeats = 1;
         break;
     }
-    *rows = 16*repeats;
     for (row = 0;  row < 16;  row++)
     {
         t = header;
@@ -563,6 +608,22 @@ static int get_tiff_directory_info(t4_state_t *s)
             break;
         }
     }
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    if (TIFFGetField(t->tiff_file, TIFFTAG_PROFILETYPE, &parm32))
+        printf("Profile type %u\n", parm32);
+    if (TIFFGetField(t->tiff_file, TIFFTAG_FAXPROFILE, &parm8))
+        printf("FAX profile %u\n", parm8);
+    if (TIFFGetField(t->tiff_file, TIFFTAG_CODINGMETHODS, &parm32))
+        printf("Coding methods 0x%x\n", parm32);
+    if (TIFFGetField(t->tiff_file, TIFFTAG_VERSIONYEAR, &u))
+    {
+        memcpy(uu, u, 4);
+        uu[4] = '\0';
+        printf("Version year \"%s\"\n", uu);
+    }
+    if (TIFFGetField(t->tiff_file, TIFFTAG_MODENUMBER, &parm8))
+        printf("Mode number %u\n", parm8);
+#endif
 
     return 0;
 }
@@ -1229,6 +1290,9 @@ SPAN_DECLARE(t4_state_t *) t4_tx_init(t4_state_t *s, const char *file, int start
             return NULL;
     }
     memset(s, 0, sizeof(*s));
+#if defined(SPANDSP_SUPPORT_TIFF_FX)
+    TIFF_FX_init();
+#endif
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
     span_log_set_protocol(&s->logging, "T.4");
     s->rx = FALSE;
@@ -1286,7 +1350,6 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
     int run_space;
     int len;
     int old_image_width;
-    int header_rows;
     uint8_t *bufptr8;
     uint32_t *bufptr;
 
@@ -1338,7 +1401,7 @@ SPAN_DECLARE(int) t4_tx_start_page(t4_state_t *s)
 
     if (s->header_info  &&  s->header_info[0])
     {
-        if (t4_tx_put_fax_header(s, &header_rows))
+        if (t4_tx_put_fax_header(s))
             return -1;
     }
     if (s->t4_t6_tx.row_read_handler)
@@ -1503,12 +1566,6 @@ SPAN_DECLARE(void) t4_tx_set_min_bits_per_row(t4_state_t *s, int bits)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t4_tx_set_header_overlays_image(t4_state_t *s, int header_overlays_image)
-{
-    s->header_overlays_image = header_overlays_image;
-}
-/*- End of function --------------------------------------------------------*/
-
 SPAN_DECLARE(void) t4_tx_set_local_ident(t4_state_t *s, const char *ident)
 {
     s->tiff.local_ident = (ident  &&  ident[0])  ?  ident  :  NULL;
@@ -1521,9 +1578,9 @@ SPAN_DECLARE(void) t4_tx_set_header_info(t4_state_t *s, const char *info)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, const char *tzstring)
+SPAN_DECLARE(void) t4_tx_set_header_tz(t4_state_t *s, struct tz_s *tz)
 {
-    s->tz = tz_init(s->tz, tzstring);
+    s->tz = tz;
 }
 /*- End of function --------------------------------------------------------*/
 

@@ -27,15 +27,15 @@
 #define _SPANDSP_PRIVATE_V22BIS_H_
 
 /*! The number of steps to the left and to the right of the target position in the equalizer buffer. */
-#define V22BIS_EQUALIZER_LEN    7
+#define V22BIS_EQUALIZER_LEN        7
 /*! One less than a power of 2 >= (2*V22BIS_EQUALIZER_LEN + 1) */
-#define V22BIS_EQUALIZER_MASK   15
+#define V22BIS_EQUALIZER_MASK       15
 
 /*! The number of taps in the transmit pulse shaping filter */
-#define V22BIS_TX_FILTER_STEPS  9
+#define V22BIS_TX_FILTER_STEPS      9
 
 /*! The number of taps in the receive pulse shaping/bandpass filter */
-#define V22BIS_RX_FILTER_STEPS  27
+#define V22BIS_RX_FILTER_STEPS      27
 
 /*! Segments of the training sequence on the receive side */
 enum
@@ -124,11 +124,12 @@ struct v22bis_state_s
         uint32_t carrier_phase;
         /*! \brief The update rate for the phase of the carrier (i.e. the DDS increment). */
         int32_t carrier_phase_rate;
+
         /*! \brief The proportional part of the carrier tracking filter. */
         float carrier_track_p;
         /*! \brief The integral part of the carrier tracking filter. */
         float carrier_track_i;
-        
+
         /*! \brief A callback function which may be enabled to report every symbol's
                    constellation position. */
         qam_report_handler_t qam_report;
@@ -191,7 +192,7 @@ struct v22bis_state_s
         int rrc_filter_step;
 
         /*! \brief The register for the data scrambler. */
-        unsigned int scramble_reg;
+        uint32_t scramble_reg;
         /*! \brief A counter for the number of consecutive bits of repeating pattern through
                    the scrambler. */
         int scrambler_pattern_count;

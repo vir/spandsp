@@ -79,7 +79,7 @@ struct v27ter_rx_state_s
     int rrc_filter_step;
 
     /*! \brief The register for the training and data scrambler. */
-    unsigned int scramble_reg;
+    uint32_t scramble_reg;
     /*! \brief A counter for the number of consecutive bits of repeating pattern through
                the scrambler. */
     int scrambler_pattern_count;

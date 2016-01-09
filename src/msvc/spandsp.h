@@ -36,6 +36,11 @@
 
 #define SPANDSP_USE_EXPORT_CAPABILITY 1
 
+@SPANDSP_SUPPORT_T42@
+@SPANDSP_SUPPORT_T43@
+@SPANDSP_SUPPORT_T85@
+@SPANDSP_SUPPORT_V34@
+
 #include <stdlib.h>
 #include <msvc/inttypes.h>
 #include <string.h>
@@ -100,6 +105,7 @@
 #include <spandsp/v27ter_tx.h>
 /*#include <spandsp/v34.h>*/
 #include <spandsp/v18.h>
+#include <spandsp/timezone.h>
 #include <spandsp/t4_rx.h>
 #include <spandsp/t4_tx.h>
 #include <spandsp/image_translate.h>
@@ -107,6 +113,8 @@
 #include <spandsp/t4_t6_encode.h>
 /*#include <spandsp/t81_t82_arith_coding.h>*/
 /*#include <spandsp/t85.h>*/
+/*#include <spandsp/t42.h>*/
+/*#include <spandsp/t43.h>*/
 #include <spandsp/t30.h>
 #include <spandsp/t30_api.h>
 #include <spandsp/t30_fcf.h>
@@ -129,7 +137,6 @@
 #include <spandsp/gsm0610.h>
 #include <spandsp/plc.h>
 #include <spandsp/playout.h>
-#include <spandsp/timezone.h>
 
 #endif
 
