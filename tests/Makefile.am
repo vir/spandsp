@@ -37,7 +37,6 @@ EXTRA_DIST = fax_tests.sh \
              msvc/queue_tests.vcproj \
              msvc/t38_core_tests.vcproj \
              msvc/t38_non_ecm_buffer_tests.vcproj \
-             msvc/t38_terminal_tests.vcproj \
              msvc/v22bis_tests.vcproj \
              msvc/v29_tests.vcproj \
              msvc/v8_tests.vcproj \
@@ -104,12 +103,12 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     super_tone_rx_tests \
                     super_tone_tx_tests \
                     swept_tone_tests \
-                    t4_tests \
                     t31_tests \
                     t35_tests \
                     t38_core_tests \
                     t38_decode \
                     t38_non_ecm_buffer_tests \
+                    t4_tests \
                     time_scale_tests \
                     timezone_tests \
                     tone_detect_tests \
@@ -125,8 +124,6 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     v8_tests \
                     vector_float_tests \
                     vector_int_tests \
-                    testadsi \
-                    testfax \
                     tsb85_tests
 
 noinst_HEADERS =    echo_monitor.h \
@@ -297,9 +294,6 @@ super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR
 swept_tone_tests_SOURCES = swept_tone_tests.c
 swept_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
-t4_tests_SOURCES = t4_tests.c
-t4_tests_LDADD = $(LIBDIR) -lspandsp
-
 t31_tests_SOURCES = t31_tests.c fax_utils.c media_monitor.cpp
 t31_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
@@ -314,6 +308,9 @@ t38_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspand
 
 t38_non_ecm_buffer_tests_SOURCES = t38_non_ecm_buffer_tests.c
 t38_non_ecm_buffer_tests_LDADD = $(LIBDIR) -lspandsp
+
+t4_tests_SOURCES = t4_tests.c
+t4_tests_LDADD = $(LIBDIR) -lspandsp
 
 time_scale_tests_SOURCES = time_scale_tests.c
 time_scale_tests_LDADD = $(LIBDIR) -lspandsp
@@ -359,12 +356,6 @@ vector_float_tests_LDADD = $(LIBDIR) -lspandsp
 
 vector_int_tests_SOURCES = vector_int_tests.c
 vector_int_tests_LDADD = $(LIBDIR) -lspandsp
-
-testadsi_SOURCES = testadsi.c
-testadsi_LDADD = $(LIBDIR) -lspandsp
-
-testfax_SOURCES = testfax.c
-testfax_LDADD = $(LIBDIR) -lspandsp
 
 # We need to create the CSS files for echo cancellation tests.
 

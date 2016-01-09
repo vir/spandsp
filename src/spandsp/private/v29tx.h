@@ -58,7 +58,7 @@ struct v29_tx_state_s
     float gain;
 #endif
 
-    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t rrc_filter[2*V29_TX_FILTER_STEPS];
 #else

@@ -58,7 +58,7 @@ struct v27ter_tx_state_s
     /*! \brief The gain factor needed to achieve the specified output power at 4800bps. */
     float gain_4800;
 #endif
-    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
     complexi16_t rrc_filter[2*V27TER_TX_FILTER_STEPS];
 #else

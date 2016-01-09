@@ -27,15 +27,15 @@
 #define _SPANDSP_PRIVATE_V22BIS_H_
 
 /*! The number of steps to the left and to the right of the target position in the equalizer buffer. */
-#define V22BIS_EQUALIZER_LEN    7
+#define V22BIS_EQUALIZER_LEN        7
 /*! One less than a power of 2 >= (2*V22BIS_EQUALIZER_LEN + 1) */
-#define V22BIS_EQUALIZER_MASK   15
+#define V22BIS_EQUALIZER_MASK       15
 
 /*! The number of taps in the transmit pulse shaping filter */
-#define V22BIS_TX_FILTER_STEPS  9
+#define V22BIS_TX_FILTER_STEPS      9
 
 /*! The number of taps in the receive pulse shaping/bandpass filter */
-#define V22BIS_RX_FILTER_STEPS  27
+#define V22BIS_RX_FILTER_STEPS      27
 
 /*! Segments of the training sequence on the receive side */
 enum
@@ -93,7 +93,7 @@ struct v22bis_state_s
     /* Receive section */
     struct
     {
-        /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINTx)
         int16_t rrc_filter[V22BIS_RX_FILTER_STEPS];
 #else
@@ -185,7 +185,7 @@ struct v22bis_state_s
         /*! \brief The gain factor needed to achieve the specified output power. */
         float gain;
 
-        /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+        /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
         complexf_t rrc_filter[2*V22BIS_TX_FILTER_STEPS];
         /*! \brief Current offset into the RRC pulse shaping filter buffer. */
         int rrc_filter_step;

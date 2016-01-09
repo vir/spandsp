@@ -52,24 +52,27 @@ struct fax_modems_state_s
     /*! \brief A V.21 FSK modem context used when receiving HDLC over V.21
                messages. */
     fsk_rx_state_t v21_rx;
-    /*! \brief A V.17 modem context used when sending FAXes at 7200bps, 9600bps
-               12000bps or 14400bps */
-    v17_tx_state_t v17_tx;
-    /*! \brief A V.29 modem context used when receiving FAXes at 7200bps, 9600bps
-               12000bps or 14400bps */
-    v17_rx_state_t v17_rx;
-    /*! \brief A V.29 modem context used when sending FAXes at 7200bps or
-               9600bps */
-    v29_tx_state_t v29_tx;
-    /*! \brief A V.29 modem context used when receiving FAXes at 7200bps or
-               9600bps */
-    v29_rx_state_t v29_rx;
-    /*! \brief A V.27ter modem context used when sending FAXes at 2400bps or
-               4800bps */
-    v27ter_tx_state_t v27ter_tx;
-    /*! \brief A V.27ter modem context used when receiving FAXes at 2400bps or
-               4800bps */
-    v27ter_rx_state_t v27ter_rx;
+    struct
+    {
+        /*! \brief A V.17 modem context used when sending FAXes at 7200bps, 9600bps
+                   12000bps or 14400bps */
+        v17_tx_state_t v17_tx;
+        /*! \brief A V.29 modem context used when receiving FAXes at 7200bps, 9600bps
+                   12000bps or 14400bps */
+        v17_rx_state_t v17_rx;
+        /*! \brief A V.29 modem context used when sending FAXes at 7200bps or
+                   9600bps */
+        v29_tx_state_t v29_tx;
+        /*! \brief A V.29 modem context used when receiving FAXes at 7200bps or
+                   9600bps */
+        v29_rx_state_t v29_rx;
+        /*! \brief A V.27ter modem context used when sending FAXes at 2400bps or
+                   4800bps */
+        v27ter_tx_state_t v27ter_tx;
+        /*! \brief A V.27ter modem context used when receiving FAXes at 2400bps or
+                   4800bps */
+        v27ter_rx_state_t v27ter_rx;
+    } fast_modems;
     /*! \brief Used to insert timed silences. */
     silence_gen_state_t silence_gen;
     /*! \brief CED or CNG generator */

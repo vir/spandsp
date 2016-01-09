@@ -54,12 +54,12 @@ subdir = doc
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/doxygen.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ax_compiler_vendor.m4 \
-	$(top_srcdir)/config/ax_check_real_file.m4 \
-	$(top_srcdir)/config/ax_fixed_point_machine.m4 \
-	$(top_srcdir)/config/ax_misaligned_access_fails.m4 \
-	$(top_srcdir)/config/ax_c99_features.m4 \
-	$(top_srcdir)/config/ax_check_export_capability.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_vendor.m4 \
+	$(top_srcdir)/m4/ax_check_real_file.m4 \
+	$(top_srcdir)/m4/ax_fixed_point_machine.m4 \
+	$(top_srcdir)/m4/ax_misaligned_access_fails.m4 \
+	$(top_srcdir)/m4/ax_c99_features.m4 \
+	$(top_srcdir)/m4/ax_check_export_capability.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -108,6 +108,9 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GREP = @GREP@
+HAVE_FAX2TIFF = @HAVE_FAX2TIFF@
+HAVE_PBMTOG3 = @HAVE_PBMTOG3@
+HAVE_SOX = @HAVE_SOX@
 INSERT_INTTYPES_HEADER = @INSERT_INTTYPES_HEADER@
 INSERT_MATH_HEADER = @INSERT_MATH_HEADER@
 INSERT_STDINT_HEADER = @INSERT_STDINT_HEADER@

@@ -61,7 +61,7 @@ struct v29_rx_state_s
                routine. */
     void *qam_user_data;
 
-    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
 #if defined(SPANDSP_USE_FIXED_POINT)
     int16_t rrc_filter[V29_RX_FILTER_STEPS];
 #else

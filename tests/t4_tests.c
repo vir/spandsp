@@ -52,8 +52,8 @@ in ITU specifications T.4 and T.6.
 
 #define XSIZE           1728
 
-t4_state_t send_state;
-t4_state_t receive_state;
+t4_tx_state_t send_state;
+t4_rx_state_t receive_state;
 
 /* The following are some test cases from T.4 */
 #define FILL_70      "                                                                      "
@@ -100,7 +100,7 @@ static const char t4_t6_test_patterns[][1728 + 1] =
 int rows_written = 0;
 int rows_read = 0;
 
-static void dump_image_as_xxx(t4_state_t *state)
+static void dump_image_as_xxx(t4_rx_state_t *state)
 {
 #if 1
     int i;
@@ -122,7 +122,7 @@ static void dump_image_as_xxx(t4_state_t *state)
 }
 /*- End of function --------------------------------------------------------*/
 
-static void display_page_stats(t4_state_t *s)
+static void display_page_stats(t4_rx_state_t *s)
 {
     t4_stats_t stats;
 

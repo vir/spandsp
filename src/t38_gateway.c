@@ -240,7 +240,7 @@ static int v17_v21_rx_fillin(void *user_data, int len)
 
     t = (t38_gateway_state_t *) user_data;
     s = &t->audio.modems;
-    v17_rx_fillin(&s->v17_rx, len);
+    v17_rx_fillin(&s->fast_modems.v17_rx, len);
     fsk_rx_fillin(&s->v21_rx, len);
     return 0;
 }
@@ -253,13 +253,13 @@ static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
 
     t = (t38_gateway_state_t *) user_data;
     s = &t->audio.modems;
-    v17_rx(&s->v17_rx, amp, len);
+    v17_rx(&s->fast_modems.v17_rx, amp, len);
     if (s->rx_trained)
     {
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
-        span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->v17_rx));
-        set_rx_handler(t, (span_rx_handler_t) &v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->v17_rx);
+        span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->fast_modems.v17_rx));
+        set_rx_handler(t, (span_rx_handler_t) &v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->fast_modems.v17_rx);
     }
     else
     {
@@ -283,7 +283,7 @@ static int v27ter_v21_rx_fillin(void *user_data, int len)
 
     t = (t38_gateway_state_t *) user_data;
     s = &t->audio.modems;
-    v27ter_rx_fillin(&s->v27ter_rx, len);
+    v27ter_rx_fillin(&s->fast_modems.v27ter_rx, len);
     fsk_rx_fillin(&s->v21_rx, len);
     return 0;
 }
@@ -296,13 +296,13 @@ static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
 
     t = (t38_gateway_state_t *) user_data;
     s = &t->audio.modems;
-    v27ter_rx(&s->v27ter_rx, amp, len);
+    v27ter_rx(&s->fast_modems.v27ter_rx, amp, len);
     if (s->rx_trained)
     {
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
-        span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->v27ter_rx));
-        set_rx_handler(t, (span_rx_handler_t) &v27ter_rx, (span_rx_fillin_handler_t) &v27ter_v21_rx_fillin, &s->v27ter_rx);
+        span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->fast_modems.v27ter_rx));
+        set_rx_handler(t, (span_rx_handler_t) &v27ter_rx, (span_rx_fillin_handler_t) &v27ter_v21_rx_fillin, &s->fast_modems.v27ter_rx);
     }
     else
     {
@@ -326,7 +326,7 @@ static int v29_v21_rx_fillin(void *user_data, int len)
 
     t = (t38_gateway_state_t *) user_data;
     s = &t->audio.modems;
-    v29_rx_fillin(&s->v29_rx, len);
+    v29_rx_fillin(&s->fast_modems.v29_rx, len);
     fsk_rx_fillin(&s->v21_rx, len);
     return 0;
 }
@@ -339,13 +339,13 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
 
     t = (t38_gateway_state_t *) user_data;
     s = &t->audio.modems;
-    v29_rx(&s->v29_rx, amp, len);
+    v29_rx(&s->fast_modems.v29_rx, amp, len);
     if (s->rx_trained)
     {
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
-        span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->v29_rx));
-        set_rx_handler(t, (span_rx_handler_t) &v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->v29_rx);
+        span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->fast_modems.v29_rx));
+        set_rx_handler(t, (span_rx_handler_t) &v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->fast_modems.v29_rx);
     }
     else
     {
@@ -524,10 +524,10 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         }
         /*endswitch*/
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        v27ter_tx_restart(&t->v27ter_tx, t->tx_bit_rate, t->use_tep);
-        v27ter_tx_set_get_bit(&t->v27ter_tx, get_bit_func, get_bit_user_data);
+        v27ter_tx_restart(&t->fast_modems.v27ter_tx, t->tx_bit_rate, t->use_tep);
+        v27ter_tx_set_get_bit(&t->fast_modems.v27ter_tx, get_bit_func, get_bit_user_data);
         set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t) &v27ter_tx, &t->v27ter_tx);
+        set_next_tx_handler(s, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V29_7200_TRAINING:
@@ -543,10 +543,10 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         }
         /*endswitch*/
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        v29_tx_restart(&t->v29_tx, t->tx_bit_rate, t->use_tep);
-        v29_tx_set_get_bit(&t->v29_tx, get_bit_func, get_bit_user_data);
+        v29_tx_restart(&t->fast_modems.v29_tx, t->tx_bit_rate, t->use_tep);
+        v29_tx_set_get_bit(&t->fast_modems.v29_tx, get_bit_func, get_bit_user_data);
         set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t) &v29_tx, &t->v29_tx);
+        set_next_tx_handler(s, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V17_7200_SHORT_TRAINING:
@@ -591,10 +591,10 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         }
         /*endswitch*/
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
-        v17_tx_restart(&t->v17_tx, t->tx_bit_rate, t->use_tep, short_train);
-        v17_tx_set_get_bit(&t->v17_tx, get_bit_func, get_bit_user_data);
+        v17_tx_restart(&t->fast_modems.v17_tx, t->tx_bit_rate, t->use_tep, short_train);
+        v17_tx_set_get_bit(&t->fast_modems.v17_tx, get_bit_func, get_bit_user_data);
         set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t) &v17_tx, &t->v17_tx);
+        set_next_tx_handler(s, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V8_ANSAM:
@@ -2157,20 +2157,20 @@ static int restart_rx_modem(t38_gateway_state_t *s)
     switch (s->core.fast_rx_modem)
     {
     case T38_V17_RX:
-        v17_rx_restart(&s->audio.modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
-        v17_rx_set_put_bit(&s->audio.modems.v17_rx, put_bit_func, put_bit_user_data);
+        v17_rx_restart(&s->audio.modems.fast_modems.v17_rx, s->core.fast_bit_rate, s->core.short_train);
+        v17_rx_set_put_bit(&s->audio.modems.fast_modems.v17_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v17_v21_rx, &v17_v21_rx_fillin, s);
         s->core.fast_rx_active = T38_V17_RX;
         break;
     case T38_V27TER_RX:
-        v27ter_rx_restart(&s->audio.modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
-        v27ter_rx_set_put_bit(&s->audio.modems.v27ter_rx, put_bit_func, put_bit_user_data);
+        v27ter_rx_restart(&s->audio.modems.fast_modems.v27ter_rx, s->core.fast_bit_rate, FALSE);
+        v27ter_rx_set_put_bit(&s->audio.modems.fast_modems.v27ter_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v27ter_v21_rx, &v27ter_v21_rx_fillin, s);
         s->core.fast_rx_active = T38_V27TER_RX;
         break;
     case T38_V29_RX:
-        v29_rx_restart(&s->audio.modems.v29_rx, s->core.fast_bit_rate, FALSE);
-        v29_rx_set_put_bit(&s->audio.modems.v29_rx, put_bit_func, put_bit_user_data);
+        v29_rx_restart(&s->audio.modems.fast_modems.v29_rx, s->core.fast_bit_rate, FALSE);
+        v29_rx_set_put_bit(&s->audio.modems.fast_modems.v29_rx, put_bit_func, put_bit_user_data);
         set_rx_handler(s, &v29_v21_rx, &v29_v21_rx_fillin, s);
         s->core.fast_rx_active = T38_V29_RX;
         break;
@@ -2408,7 +2408,7 @@ static int t38_gateway_audio_init(t38_gateway_state_t *s)
     /* TODO: Don't use the very low cutoff levels we would like to. We get some quirks if we do.
        We need to sort this out. */
     fsk_rx_signal_cutoff(&s->audio.modems.v21_rx, -30.0f);
-    v29_rx_signal_cutoff(&s->audio.modems.v29_rx, -28.5f);
+    v29_rx_signal_cutoff(&s->audio.modems.fast_modems.v29_rx, -28.5f);
     return 0;
 }
 /*- End of function --------------------------------------------------------*/

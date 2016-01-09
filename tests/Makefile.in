@@ -78,26 +78,26 @@ noinst_PROGRAMS = ademco_contactid_tests$(EXEEXT) adsi_tests$(EXEEXT) \
 	saturated_tests$(EXEEXT) schedule_tests$(EXEEXT) \
 	sig_tone_tests$(EXEEXT) super_tone_rx_tests$(EXEEXT) \
 	super_tone_tx_tests$(EXEEXT) swept_tone_tests$(EXEEXT) \
-	t4_tests$(EXEEXT) t31_tests$(EXEEXT) t35_tests$(EXEEXT) \
-	t38_core_tests$(EXEEXT) t38_decode$(EXEEXT) \
-	t38_non_ecm_buffer_tests$(EXEEXT) time_scale_tests$(EXEEXT) \
+	t31_tests$(EXEEXT) t35_tests$(EXEEXT) t38_core_tests$(EXEEXT) \
+	t38_decode$(EXEEXT) t38_non_ecm_buffer_tests$(EXEEXT) \
+	t4_tests$(EXEEXT) time_scale_tests$(EXEEXT) \
 	timezone_tests$(EXEEXT) tone_detect_tests$(EXEEXT) \
 	tone_generate_tests$(EXEEXT) tsb85_tests$(EXEEXT) \
 	v17_tests$(EXEEXT) v18_tests$(EXEEXT) v22bis_tests$(EXEEXT) \
 	v27ter_tests$(EXEEXT) v29_tests$(EXEEXT) v42_tests$(EXEEXT) \
 	v42bis_tests$(EXEEXT) v8_tests$(EXEEXT) \
 	vector_float_tests$(EXEEXT) vector_int_tests$(EXEEXT) \
-	testadsi$(EXEEXT) testfax$(EXEEXT) tsb85_tests$(EXEEXT)
+	tsb85_tests$(EXEEXT)
 subdir = tests
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ax_compiler_vendor.m4 \
-	$(top_srcdir)/config/ax_check_real_file.m4 \
-	$(top_srcdir)/config/ax_fixed_point_machine.m4 \
-	$(top_srcdir)/config/ax_misaligned_access_fails.m4 \
-	$(top_srcdir)/config/ax_c99_features.m4 \
-	$(top_srcdir)/config/ax_check_export_capability.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_vendor.m4 \
+	$(top_srcdir)/m4/ax_check_real_file.m4 \
+	$(top_srcdir)/m4/ax_fixed_point_machine.m4 \
+	$(top_srcdir)/m4/ax_misaligned_access_fails.m4 \
+	$(top_srcdir)/m4/ax_c99_features.m4 \
+	$(top_srcdir)/m4/ax_check_export_capability.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -298,12 +298,6 @@ t38_non_ecm_buffer_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_t4_tests_OBJECTS = t4_tests.$(OBJEXT)
 t4_tests_OBJECTS = $(am_t4_tests_OBJECTS)
 t4_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_testadsi_OBJECTS = testadsi.$(OBJEXT)
-testadsi_OBJECTS = $(am_testadsi_OBJECTS)
-testadsi_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_testfax_OBJECTS = testfax.$(OBJEXT)
-testfax_OBJECTS = $(am_testfax_OBJECTS)
-testfax_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_time_scale_tests_OBJECTS = time_scale_tests.$(OBJEXT)
 time_scale_tests_OBJECTS = $(am_time_scale_tests_OBJECTS)
 time_scale_tests_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -406,7 +400,6 @@ SOURCES = $(ademco_contactid_tests_SOURCES) $(adsi_tests_SOURCES) \
 	$(t31_tests_SOURCES) $(t35_tests_SOURCES) \
 	$(t38_core_tests_SOURCES) $(t38_decode_SOURCES) \
 	$(t38_non_ecm_buffer_tests_SOURCES) $(t4_tests_SOURCES) \
-	$(testadsi_SOURCES) $(testfax_SOURCES) \
 	$(time_scale_tests_SOURCES) $(timezone_tests_SOURCES) \
 	$(tone_detect_tests_SOURCES) $(tone_generate_tests_SOURCES) \
 	$(tsb85_tests_SOURCES) $(v17_tests_SOURCES) \
@@ -445,7 +438,6 @@ DIST_SOURCES = $(ademco_contactid_tests_SOURCES) $(adsi_tests_SOURCES) \
 	$(t31_tests_SOURCES) $(t35_tests_SOURCES) \
 	$(t38_core_tests_SOURCES) $(t38_decode_SOURCES) \
 	$(t38_non_ecm_buffer_tests_SOURCES) $(t4_tests_SOURCES) \
-	$(testadsi_SOURCES) $(testfax_SOURCES) \
 	$(time_scale_tests_SOURCES) $(timezone_tests_SOURCES) \
 	$(tone_detect_tests_SOURCES) $(tone_generate_tests_SOURCES) \
 	$(tsb85_tests_SOURCES) $(v17_tests_SOURCES) \
@@ -497,6 +489,9 @@ EGREP = @EGREP@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 GREP = @GREP@
+HAVE_FAX2TIFF = @HAVE_FAX2TIFF@
+HAVE_PBMTOG3 = @HAVE_PBMTOG3@
+HAVE_SOX = @HAVE_SOX@
 INSERT_INTTYPES_HEADER = @INSERT_INTTYPES_HEADER@
 INSERT_MATH_HEADER = @INSERT_MATH_HEADER@
 INSERT_STDINT_HEADER = @INSERT_STDINT_HEADER@
@@ -617,7 +612,6 @@ EXTRA_DIST = fax_tests.sh \
              msvc/queue_tests.vcproj \
              msvc/t38_core_tests.vcproj \
              msvc/t38_non_ecm_buffer_tests.vcproj \
-             msvc/t38_terminal_tests.vcproj \
              msvc/v22bis_tests.vcproj \
              msvc/v29_tests.vcproj \
              msvc/v8_tests.vcproj \
@@ -743,8 +737,6 @@ super_tone_tx_tests_SOURCES = super_tone_tx_tests.c
 super_tone_tx_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 swept_tone_tests_SOURCES = swept_tone_tests.c
 swept_tone_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
-t4_tests_SOURCES = t4_tests.c
-t4_tests_LDADD = $(LIBDIR) -lspandsp
 t31_tests_SOURCES = t31_tests.c fax_utils.c media_monitor.cpp
 t31_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 t35_tests_SOURCES = t35_tests.c
@@ -755,6 +747,8 @@ t38_decode_SOURCES = t38_decode.c fax_utils.c pcap_parse.c udptl.c
 t38_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp -lpcap
 t38_non_ecm_buffer_tests_SOURCES = t38_non_ecm_buffer_tests.c
 t38_non_ecm_buffer_tests_LDADD = $(LIBDIR) -lspandsp
+t4_tests_SOURCES = t4_tests.c
+t4_tests_LDADD = $(LIBDIR) -lspandsp
 time_scale_tests_SOURCES = time_scale_tests.c
 time_scale_tests_LDADD = $(LIBDIR) -lspandsp
 timezone_tests_SOURCES = timezone_tests.c
@@ -785,10 +779,6 @@ vector_float_tests_SOURCES = vector_float_tests.c
 vector_float_tests_LDADD = $(LIBDIR) -lspandsp
 vector_int_tests_SOURCES = vector_int_tests.c
 vector_int_tests_LDADD = $(LIBDIR) -lspandsp
-testadsi_SOURCES = testadsi.c
-testadsi_LDADD = $(LIBDIR) -lspandsp
-testfax_SOURCES = testfax.c
-testfax_LDADD = $(LIBDIR) -lspandsp
 all: all-am
 
 .SUFFIXES:
@@ -1009,12 +999,6 @@ t38_non_ecm_buffer_tests$(EXEEXT): $(t38_non_ecm_buffer_tests_OBJECTS) $(t38_non
 t4_tests$(EXEEXT): $(t4_tests_OBJECTS) $(t4_tests_DEPENDENCIES) $(EXTRA_t4_tests_DEPENDENCIES) 
 	@rm -f t4_tests$(EXEEXT)
 	$(LINK) $(t4_tests_OBJECTS) $(t4_tests_LDADD) $(LIBS)
-testadsi$(EXEEXT): $(testadsi_OBJECTS) $(testadsi_DEPENDENCIES) $(EXTRA_testadsi_DEPENDENCIES) 
-	@rm -f testadsi$(EXEEXT)
-	$(LINK) $(testadsi_OBJECTS) $(testadsi_LDADD) $(LIBS)
-testfax$(EXEEXT): $(testfax_OBJECTS) $(testfax_DEPENDENCIES) $(EXTRA_testfax_DEPENDENCIES) 
-	@rm -f testfax$(EXEEXT)
-	$(LINK) $(testfax_OBJECTS) $(testfax_LDADD) $(LIBS)
 time_scale_tests$(EXEEXT): $(time_scale_tests_OBJECTS) $(time_scale_tests_DEPENDENCIES) $(EXTRA_time_scale_tests_DEPENDENCIES) 
 	@rm -f time_scale_tests$(EXEEXT)
 	$(LINK) $(time_scale_tests_OBJECTS) $(time_scale_tests_LDADD) $(LIBS)
@@ -1133,8 +1117,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t38_decode.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t38_non_ecm_buffer_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/t4_tests.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testadsi.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/testfax.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/time_scale_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/timezone_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tone_detect_tests.Po@am__quote@

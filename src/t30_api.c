@@ -573,6 +573,14 @@ SPAN_DECLARE(int) t30_set_tx_page_header_info(t30_state_t *s, const char *info)
 }
 /*- End of function --------------------------------------------------------*/
 
+SPAN_DECLARE(size_t) t30_get_tx_page_header_info(t30_state_t *s, char *info)
+{
+    if (info)
+        strcpy(info, s->header_info);
+    return strlen(s->header_info);
+}
+/*- End of function --------------------------------------------------------*/
+
 SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring)
 {
     if (tz_init(&s->tz, tzstring))
@@ -582,14 +590,6 @@ SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring
         return 0;
     }
     return -1;
-}
-/*- End of function --------------------------------------------------------*/
-
-SPAN_DECLARE(size_t) t30_get_tx_page_header_info(t30_state_t *s, char *info)
-{
-    if (info)
-        strcpy(info, s->header_info);
-    return strlen(s->header_info);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -731,7 +731,11 @@ SPAN_DECLARE(int) t30_set_supported_t30_features(t30_state_t *s, int supported_t
 
 SPAN_DECLARE(void) t30_set_status(t30_state_t *s, int status)
 {
-    s->current_status = status;
+    if (s->current_status != status)
+    {
+        span_log(&s->logging, SPAN_LOG_FLOW, "Status changing to '%s'\n", t30_completion_code_to_str(status));
+        s->current_status = status;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 

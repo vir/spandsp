@@ -627,6 +627,8 @@ COMP_VENDOR_LDFLAGS
 COMP_VENDOR_CFLAGS
 CPPFLAGS_FOR_BUILD
 CC_FOR_BUILD
+COND_AVX_FALSE
+COND_AVX_TRUE
 COND_SSE5_FALSE
 COND_SSE5_TRUE
 COND_SSE4A_FALSE
@@ -651,6 +653,9 @@ COND_TESTS_FALSE
 COND_TESTS_TRUE
 COND_DOC_FALSE
 COND_DOC_TRUE
+HAVE_FAX2TIFF
+HAVE_PBMTOG3
+HAVE_SOX
 LIBOBJS
 CXXCPP
 OTOOL64
@@ -793,6 +798,7 @@ enable_sse4_1
 enable_sse4_2
 enable_sse4a
 enable_sse5
+enable_avx
 enable_fixed_point
 enable_builtin_tiff
 '
@@ -1446,6 +1452,7 @@ Optional Features:
   --enable-sse4-2      Enable SSE4.2 support
   --enable-sse4a       Enable SSE4A support
   --enable-sse5        Enable SSE5 support
+  --enable-avx         Enable AVX support
   --enable-fixed-point Enable fixed point support
   --enable-builtin-tiff   build with builtin libtiff
 
@@ -2730,6 +2737,7 @@ fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
 
 
 ac_config_headers="$ac_config_headers src/config.h:config-h.in"
@@ -15451,26 +15459,26 @@ $as_echo "$ax_cv_c_compiler_vendor" >&6; }
 
 if test "${build}" != "${host}"
 then
-  # If we are doing a Canadian Cross, in which the host and build systems
-  # are not the same, we set reasonable default values for the tools.
+    # If we are doing a Canadian Cross, in which the host and build systems
+    # are not the same, we set reasonable default values for the tools.
 
-  CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
-  CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-  CC=${CC-${host_alias}-gcc}
-  CFLAGS=${CFLAGS-"-g -O2"}
-  CXX=${CXX-${host_alias}-c++}
-  CXXFLAGS=${CXXFLAGS-"-g -O2"}
+    CC_FOR_BUILD=${CC_FOR_BUILD-gcc}
+    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
+    CC=${CC-${host_alias}-gcc}
+    CFLAGS=${CFLAGS-"-g -O2"}
+    CXX=${CXX-${host_alias}-c++}
+    CXXFLAGS=${CXXFLAGS-"-g -O2"}
 else
-  # Set reasonable default values for some tools even if not Canadian.
-  # Of course, these are different reasonable default values, originally
-  # specified directly in the Makefile.
-  # We don't export, so that autoconf can do its job.
-  # Note that all these settings are above the fragment inclusion point
-  # in Makefile.in, so can still be overridden by fragments.
-  # This is all going to change when we autoconfiscate...
-  CC_FOR_BUILD="\$(CC)"
-  CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
-  ac_ext=c
+    # Set reasonable default values for some tools even if not Canadian.
+    # Of course, these are different reasonable default values, originally
+    # specified directly in the Makefile.
+    # We don't export, so that autoconf can do its job.
+    # Note that all these settings are above the fragment inclusion point
+    # in Makefile.in, so can still be overridden by fragments.
+    # This is all going to change when we autoconfiscate...
+    CC_FOR_BUILD="\$(CC)"
+    CPPFLAGS_FOR_BUILD="\$(CPPFLAGS)"
+    ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
@@ -16139,30 +16147,30 @@ fi
 
 
 
-  # We must set the default linker to the linker used by gcc for the correct
-  # operation of libtool.  If LD is not defined and we are using gcc, try to
-  # set the LD default to the ld used by gcc.
-  if test -z "$LD"
-  then
-    if test "$GCC" = yes
+    # We must set the default linker to the linker used by gcc for the correct
+    # operation of libtool.  If LD is not defined and we are using gcc, try to
+    # set the LD default to the ld used by gcc.
+    if test -z "$LD"
     then
-      case $build in
-      *-*-mingw*)
-        gcc_prog_ld=`$CC -print-prog-name=ld 2>&1 | tr -d '\015'` ;;
-      *)
-        gcc_prog_ld=`$CC -print-prog-name=ld 2>&1` ;;
-      esac
-      case $gcc_prog_ld in
-      # Accept absolute paths.
-      [\\/]* | [A-Za-z]:[\\/]*)
-        LD="$gcc_prog_ld" ;;
-      esac
+        if test "$GCC" = yes
+        then
+            case $build in
+            *-*-mingw*)
+                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1 | tr -d '\015'` ;;
+            *)
+                gcc_prog_ld=`$CC -print-prog-name=ld 2>&1` ;;
+            esac
+            case $gcc_prog_ld in
+            # Accept absolute paths.
+            [\\/]* | [A-Za-z]:[\\/]*)
+                LD="$gcc_prog_ld" ;;
+            esac
+        fi
     fi
-  fi
 
-  CXX=${CXX-"c++"}
-  CFLAGS=${CFLAGS-"-g -O2"}
-  CXXFLAGS=${CXXFLAGS-"-g -O2"}
+    CXX=${CXX-"c++"}
+    CFLAGS=${CFLAGS-"-g -O2"}
+    CXXFLAGS=${CXXFLAGS-"-g -O2"}
 fi
 
 
@@ -16437,6 +16445,11 @@ fi
 # Check whether --enable-sse5 was given.
 if test "${enable_sse5+set}" = set; then :
   enableval=$enable_sse5;
+fi
+
+# Check whether --enable-avx was given.
+if test "${enable_avx+set}" = set; then :
+  enableval=$enable_avx;
 fi
 
 # Check whether --enable-fixed_point was given.
@@ -16785,8 +16798,8 @@ if ${ac_cv_c99_lrint+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-lrint_save_CFLAGS=$CFLAGS
-CFLAGS="-lm"
+lrint_save_LIBS=$LIBS
+LIBS="-lm"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16813,7 +16826,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-CFLAGS=$lrint_save_CFLAGS
+LIBS=$lrint_save_LIBS
 
 
 fi
@@ -16832,8 +16845,8 @@ if ${ac_cv_c99_lrintf+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-lrintf_save_CFLAGS=$CFLAGS
-CFLAGS="-lm"
+lrintf_save_LIBS=$LIBS
+LIBS="-lm"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16860,7 +16873,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-CFLAGS=$lrintf_save_CFLAGS
+LIBS=$lrintf_save_LIBS
 
 
 fi
@@ -16879,8 +16892,8 @@ if ${ac_cv_c99_llrint+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-llrint_save_CFLAGS=$CFLAGS
-CFLAGS="-lm"
+llrint_save_LIBS=$LIBS
+LIBS="-lm"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16907,7 +16920,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-CFLAGS=$llrint_save_CFLAGS
+LIBS=$llrint_save_LIBS
 
 
 fi
@@ -16926,8 +16939,8 @@ if ${ac_cv_c99_llrintf+:} false; then :
   $as_echo_n "(cached) " >&6
 else
 
-llrintf_save_CFLAGS=$CFLAGS
-CFLAGS="-lm"
+llrintf_save_LIBS=$LIBS
+LIBS="-lm"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -16954,7 +16967,7 @@ fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 
-CFLAGS=$llrintf_save_CFLAGS
+LIBS=$llrintf_save_LIBS
 
 
 fi
@@ -17595,7 +17608,7 @@ done
 
 if test "${build}" == "${host}"
 then
-  for ac_header in X11/X.h
+    for ac_header in X11/X.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "X11/X.h" "ac_cv_header_X11_X_h" "$ac_includes_default"
 if test "x$ac_cv_header_X11_X_h" = xyes; then :
@@ -17816,7 +17829,7 @@ eval ac_res=\$$as_ac_RealFile
 	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
 $as_echo "$ac_res" >&6; }
 if test `eval 'as_val=${'$as_ac_RealFile'};$as_echo "$as_val"'` = yes; then :
-  libdir='$(exec_prefix)/lib64'
+  libdir='${exec_prefix}/lib64'
 fi
         { $as_echo "$as_me:${as_lineno-$LINENO}: checking for /usr/X11R6/lib64" >&5
 $as_echo_n "checking for /usr/X11R6/lib64... " >&6; }
@@ -18674,14 +18687,12 @@ $as_echo "#define HAVE_LOG10F 1" >>confdefs.h
 fi
 
 
-# Checks for libraries.
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlParseFile in -lxml2" >&5
-$as_echo_n "checking for xmlParseFile in -lxml2... " >&6; }
-if ${ac_cv_lib_xml2_xmlParseFile+:} false; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for library containing open_memstream" >&5
+$as_echo_n "checking for library containing open_memstream... " >&6; }
+if ${ac_cv_search_open_memstream+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lxml2  $LIBS"
+  ac_func_search_save_LIBS=$LIBS
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
@@ -18691,40 +18702,178 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 #ifdef __cplusplus
 extern "C"
 #endif
-char xmlParseFile ();
+char open_memstream ();
 int
 main ()
 {
-return xmlParseFile ();
+return open_memstream ();
   ;
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_link "$LINENO"; then :
-  ac_cv_lib_xml2_xmlParseFile=yes
-else
-  ac_cv_lib_xml2_xmlParseFile=no
+for ac_lib in '' m; do
+  if test -z "$ac_lib"; then
+    ac_res="none required"
+  else
+    ac_res=-l$ac_lib
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
+  fi
+  if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_search_open_memstream=$ac_res
 fi
 rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
+    conftest$ac_exeext
+  if ${ac_cv_search_open_memstream+:} false; then :
+  break
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_xml2_xmlParseFile" >&5
-$as_echo "$ac_cv_lib_xml2_xmlParseFile" >&6; }
-if test "x$ac_cv_lib_xml2_xmlParseFile" = xyes; then :
+done
+if ${ac_cv_search_open_memstream+:} false; then :
 
-$as_echo "#define HAVE_LIBXML2 1" >>confdefs.h
- SIMLIBS="$SIMLIBS -lxml2"
+else
+  ac_cv_search_open_memstream=no
+fi
+rm conftest.$ac_ext
+LIBS=$ac_func_search_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_search_open_memstream" >&5
+$as_echo "$ac_cv_search_open_memstream" >&6; }
+ac_res=$ac_cv_search_open_memstream
+if test "$ac_res" != no; then :
+  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
+
+$as_echo "#define HAVE_OPEN_MEMSTREAM 1" >>confdefs.h
+
 fi
 
 
 if test -n "$enable_tests" ; then
+    # Extract the first word of "sox", so it can be a program name with args.
+set dummy sox; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_SOX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_SOX"; then
+  ac_cv_prog_HAVE_SOX="$HAVE_SOX" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_SOX="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+HAVE_SOX=$ac_cv_prog_HAVE_SOX
+if test -n "$HAVE_SOX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_SOX" >&5
+$as_echo "$HAVE_SOX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test "x$HAVE_SOX" != "xyes" ; then
+        as_fn_error $? "\"Cannot make tests without sox installed\"" "$LINENO" 5
+    fi
+    # Extract the first word of "pbmtog3", so it can be a program name with args.
+set dummy pbmtog3; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_PBMTOG3+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_PBMTOG3"; then
+  ac_cv_prog_HAVE_PBMTOG3="$HAVE_PBMTOG3" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_PBMTOG3="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+HAVE_PBMTOG3=$ac_cv_prog_HAVE_PBMTOG3
+if test -n "$HAVE_PBMTOG3"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_PBMTOG3" >&5
+$as_echo "$HAVE_PBMTOG3" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test "x$HAVE_PBMTOG3" != "xyes" ; then
+        as_fn_error $? "\"Cannot make tests without pbmtog3 installed (does your system require a netpbm-progs package?)\"" "$LINENO" 5
+    fi
+    # Extract the first word of "fax2tiff", so it can be a program name with args.
+set dummy fax2tiff; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_HAVE_FAX2TIFF+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$HAVE_FAX2TIFF"; then
+  ac_cv_prog_HAVE_FAX2TIFF="$HAVE_FAX2TIFF" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_HAVE_FAX2TIFF="yes"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+HAVE_FAX2TIFF=$ac_cv_prog_HAVE_FAX2TIFF
+if test -n "$HAVE_FAX2TIFF"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_FAX2TIFF" >&5
+$as_echo "$HAVE_FAX2TIFF" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    if test "x$HAVE_FAX2TIFF" != "xyes" ; then
+        as_fn_error $? "\"Cannot make tests without fax2tiff installed (does your system require a libtiff-tools package?)\"" "$LINENO" 5
+    fi
     ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+    # Checks for libraries.
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sf_open in -lsndfile" >&5
 $as_echo_n "checking for sf_open in -lsndfile... " >&6; }
 if ${ac_cv_lib_sndfile_sf_open+:} false; then :
@@ -18764,7 +18913,7 @@ $as_echo "$ac_cv_lib_sndfile_sf_open" >&6; }
 if test "x$ac_cv_lib_sndfile_sf_open" = xyes; then :
   SIMLIBS="$SIMLIBS -lsndfile"
 else
-  as_fn_error $? "\"Can't make tests without libsndfile (does your system require a libsndfile-devel package?)\"" "$LINENO" 5
+  as_fn_error $? "\"Cannot make tests without libsndfile (does your system require a libsndfile-devel package?)\"" "$LINENO" 5
 fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fftw_plan_dft_1d in -lfftw3" >&5
@@ -18845,9 +18994,51 @@ $as_echo "$ac_cv_lib_fftw_fftw_create_plan" >&6; }
 if test "x$ac_cv_lib_fftw_fftw_create_plan" = xyes; then :
   SIMLIBS="$SIMLIBS -lfftw"
 else
-  as_fn_error $? "\"Can't make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)\"" "$LINENO" 5
+  as_fn_error $? "\"Cannot make tests without FFTW 2 or 3 (does your system require an fftw?-devel package?)\"" "$LINENO" 5
 fi
 
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for xmlParseFile in -lxml2" >&5
+$as_echo_n "checking for xmlParseFile in -lxml2... " >&6; }
+if ${ac_cv_lib_xml2_xmlParseFile+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lxml2  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char xmlParseFile ();
+int
+main ()
+{
+return xmlParseFile ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_xml2_xmlParseFile=yes
+else
+  ac_cv_lib_xml2_xmlParseFile=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_xml2_xmlParseFile" >&5
+$as_echo "$ac_cv_lib_xml2_xmlParseFile" >&6; }
+if test "x$ac_cv_lib_xml2_xmlParseFile" = xyes; then :
+  TESTLIBS="$TESTLIBS -lxml2"
+else
+  as_fn_error $? "\"Cannot make tests without libxml2 (does your system require a libxml2-devel package?)\"" "$LINENO" 5
 fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_open_offline in -lpcap" >&5
@@ -18889,7 +19080,48 @@ $as_echo "$ac_cv_lib_pcap_pcap_open_offline" >&6; }
 if test "x$ac_cv_lib_pcap_pcap_open_offline" = xyes; then :
   TESTLIBS="$TESTLIBS -lpcap"
 else
-  as_fn_error $? "\"Can't make tests without libpcap (does your system require a libpcap-devel package?)\"" "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pcap_open_offline in -lwpcap" >&5
+$as_echo_n "checking for pcap_open_offline in -lwpcap... " >&6; }
+if ${ac_cv_lib_wpcap_pcap_open_offline+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lwpcap  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char pcap_open_offline ();
+int
+main ()
+{
+return pcap_open_offline ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_wpcap_pcap_open_offline=yes
+else
+  ac_cv_lib_wpcap_pcap_open_offline=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_wpcap_pcap_open_offline" >&5
+$as_echo "$ac_cv_lib_wpcap_pcap_open_offline" >&6; }
+if test "x$ac_cv_lib_wpcap_pcap_open_offline" = xyes; then :
+  TESTLIBS="$TESTLIBS -lwpcap"
+else
+  as_fn_error $? "\"Cannot make tests without libpcap (does your system require an libpcap-devel package?)\"" "$LINENO" 5
+fi
+
 fi
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for pthread_attr_init in -lpthread" >&5
@@ -19219,7 +19451,7 @@ ac_cv_symbol_export_capability="no"
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
     save_CFLAGS="${CFLAGS}"
-    CFLAGS="${CFLAGS} -Werror -fvisibility=hidden"
+    CFLAGS="${CFLAGS} -fvisibility=hidden"
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 int foo __attribute__ ((visibility("default")));
@@ -19235,8 +19467,8 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-         COMP_VENDOR_CFLAGS="-fvisibility=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
-         COMP_VENDOR_CXXFLAGS="-fvisibility=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
+         COMP_VENDOR_CFLAGS="-fvisibility=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
+         COMP_VENDOR_CXXFLAGS="-fvisibility=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_export_capability="yes"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -19265,8 +19497,8 @@ _ACEOF
 if ac_fn_c_try_compile "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
-         COMP_VENDOR_CFLAGS="-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
-         COMP_VENDOR_CXXFLAGS="-xldscope=hidden -DSWITCH_API_VISIBILITY=1 -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
+         COMP_VENDOR_CFLAGS="-xldscope=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CFLAGS"
+         COMP_VENDOR_CXXFLAGS="-xldscope=hidden -DHAVE_VISIBILITY=1 $COMP_VENDOR_CXXFLAGS"
          ac_cv_symbol_export_capability="yes"
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
@@ -19292,7 +19524,10 @@ fi
 
 case "${ax_cv_c_compiler_vendor}" in
 gnu)
-    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=gnu99 -ffast-math -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    if test "$enable_avx" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse5" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
     fi
@@ -19321,8 +19556,11 @@ gnu)
         COMP_VENDOR_CFLAGS="-mmmx $COMP_VENDOR_CFLAGS"
     fi
     case $host_os in
-    mingw* | cygwin*)
+    cygwin*)
         COMP_VENDOR_LDFLAGS="-no-undefined"
+        ;;
+    mingw*)
+        COMP_VENDOR_LDFLAGS="-no-undefined -lws2_32"
         ;;
     *)
         COMP_VENDOR_LDFLAGS=
@@ -19361,7 +19599,10 @@ sun)
 
     ;;
 intel)
-    COMP_VENDOR_CFLAGS="-std=c99 -D_POSIX_C_SOURCE=2 -D_GNU_SOURCE=1 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=c99 -D_POSIX_C_SOURCE=2 -D_GNU_SOURCE=1 -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    if test "$enable_avx" = "yes" ; then
+        COMP_VENDOR_CFLAGS="-mavx $COMP_VENDOR_CFLAGS"
+    fi
     if test "$enable_sse5" = "yes" ; then
         COMP_VENDOR_CFLAGS="-msse5 $COMP_VENDOR_CFLAGS"
     fi
@@ -19392,12 +19633,148 @@ intel)
     COMP_VENDOR_LDFLAGS=
     ;;
 *)
-    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_CFLAGS="-std=c99 -Wall -Wunused-variable -Wunused-but-set-variable -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes $COMP_VENDOR_CFLAGS"
     COMP_VENDOR_LDFLAGS=
     ;;
 esac
 
 COMP_VENDOR_CFLAGS="-DNDEBUG $COMP_VENDOR_CFLAGS"
+
+if test "$enable_fixed_point" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_FIXED_POINT 1" >>confdefs.h
+
+    SPANDSP_USE_FIXED_POINT="#define SPANDSP_USE_FIXED_POINT 1"
+else
+    as_ac_FixedPoint=`$as_echo "ac_cv_fixed_point_machine_$host" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $host is fixed point only" >&5
+$as_echo_n "checking if $host is fixed point only... " >&6; }
+if eval \${$as_ac_FixedPoint+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $host in
+      arc | arm | armble | armelb | armv2345 | armv345lb \
+    | bfin \
+    | mips | mipsbe | mipseb | mipsel | mipsle \
+    | tic54x | c54x* | tic55x | c55x* | tic6x | c6x* \
+    | xscale | xscaleebl \
+    | arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
+    | bfin-* \
+    | mips-* | mipsbe-* | mipseb-* | mipsel-* | mipsle-* \
+    | tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
+    | xscale-* | xscaleebl-* )
+        eval "$as_ac_FixedPoint=yes"
+        ;;
+    *)
+        eval "$as_ac_FixedPoint=no"
+        ;;
+esac
+fi
+eval ac_res=\$$as_ac_FixedPoint
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if test `eval 'as_val=${'$as_ac_FixedPoint'};$as_echo "$as_val"'` = yes; then :
+
+$as_echo "#define SPANDSP_USE_FIXED_POINT 1" >>confdefs.h
+
+        SPANDSP_USE_FIXED_POINT="#define SPANDSP_USE_FIXED_POINT 1"
+else
+  SPANDSP_USE_FIXED_POINT="#undef SPANDSP_USE_FIXED_POINT"
+fi
+fi
+as_ac_MisalignedAccessFails=`$as_echo "ac_cv_misaligned_access_fails_$host" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $host fails on misaligned memory access" >&5
+$as_echo_n "checking if $host fails on misaligned memory access... " >&6; }
+if eval \${$as_ac_MisalignedAccessFails+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $host in
+      arc | arm | armble | armelb | armv2345 | armv345lb \
+    | bfin \
+    | sparc \
+    | xscale | xscaleebl \
+    | arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
+    | bfin-* \
+    | sparc-* \
+    | xscale-* | xscaleebl-* )
+        eval "$as_ac_MisalignedAccessFails=yes"
+        ;;
+    *)
+        eval "$as_ac_MisalignedAccessFails=no"
+        ;;
+esac
+fi
+eval ac_res=\$$as_ac_MisalignedAccessFails
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+if test `eval 'as_val=${'$as_ac_MisalignedAccessFails'};$as_echo "$as_val"'` = yes; then :
+
+$as_echo "#define SPANDSP_MISALIGNED_ACCESS_FAILS 1" >>confdefs.h
+
+    SPANDSP_MISALIGNED_ACCESS_FAILS="#define SPANDSP_MISALIGNED_ACCESS_FAILS 1"
+else
+  SPANDSP_MISALIGNED_ACCESS_FAILS="#undef SPANDSP_MISALIGNED_ACCESS_FAILS"
+fi
+
+if test "$enable_avx" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_AVX 1" >>confdefs.h
+
+    enable_sse5"yes"
+fi
+if test "$enable_sse5" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE5 1" >>confdefs.h
+
+    enable_sse4a="yes"
+fi
+if test "$enable_sse4a" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE4A 1" >>confdefs.h
+
+    enable_sse4_2="yes"
+fi
+if test "$enable_sse4_2" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE4_2 1" >>confdefs.h
+
+    enable_sse4_1="yes"
+fi
+if test "$enable_sse4_1" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE4_1 1" >>confdefs.h
+
+    enable_ssse3="yes"
+fi
+if test "$enable_ssse3" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSSE3 1" >>confdefs.h
+
+    enable_sse3="yes"
+fi
+if test "$enable_sse3" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE3 1" >>confdefs.h
+
+    enable_sse2="yes"
+fi
+if test "$enable_sse2" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE2 1" >>confdefs.h
+
+    enable_sse="yes"
+fi
+if test "$enable_sse" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_SSE 1" >>confdefs.h
+
+    enable_mmx="yes"
+fi
+if test "$enable_mmx" = "yes" ; then
+
+$as_echo "#define SPANDSP_USE_MMX 1" >>confdefs.h
+
+fi
 
  if test "$enable_doc" = yes; then
   COND_DOC_TRUE=
@@ -19495,141 +19872,20 @@ else
   COND_SSE5_FALSE=
 fi
 
-if test "$enable_fixed_point" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_FIXED_POINT 1" >>confdefs.h
-
-    SPANDSP_USE_FIXED_POINT="#define SPANDSP_USE_FIXED_POINT 1"
+ if test "$enable_avx" = yes; then
+  COND_AVX_TRUE=
+  COND_AVX_FALSE='#'
 else
-    as_ac_FixedPoint=`$as_echo "ac_cv_fixed_point_machine_$host" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $host is fixed point only" >&5
-$as_echo_n "checking if $host is fixed point only... " >&6; }
-if eval \${$as_ac_FixedPoint+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $host in
-      arc | arm | armble | armelb | armv2345 | armv345lb \
-    | bfin \
-    | mips | mipsbe | mipseb | mipsel | mipsle \
-    | tic54x | c54x* | tic55x | c55x* | tic6x | c6x* \
-    | xscale | xscaleebl \
-    | arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
-    | bfin-* \
-    | mips-* | mipsbe-* | mipseb-* | mipsel-* | mipsle-* \
-    | tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
-    | xscale-* | xscaleebl-* )
-        eval "$as_ac_FixedPoint=yes"
-        ;;
-    *)
-        eval "$as_ac_FixedPoint=no"
-        ;;
-esac
-fi
-eval ac_res=\$$as_ac_FixedPoint
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if test `eval 'as_val=${'$as_ac_FixedPoint'};$as_echo "$as_val"'` = yes; then :
-
-$as_echo "#define SPANDSP_USE_FIXED_POINT 1" >>confdefs.h
-
-        SPANDSP_USE_FIXED_POINT="#define SPANDSP_USE_FIXED_POINT 1"
-else
-  SPANDSP_USE_FIXED_POINT="#undef SPANDSP_USE_FIXED_POINT"
-fi
-fi
-as_ac_MisalignedAccessFails=`$as_echo "ac_cv_misaligned_access_fails_$host" | $as_tr_sh`
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if $host fails on misaligned memory access" >&5
-$as_echo_n "checking if $host fails on misaligned memory access... " >&6; }
-if eval \${$as_ac_MisalignedAccessFails+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $host in
-      arc | arm | armble | armelb | armv2345 | armv345lb \
-    | bfin \
-    | sparc \
-    | xscale | xscaleebl \
-    | arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
-    | bfin-* \
-    | sparc-* \
-    | xscale-* | xscaleebl-* )
-        eval "$as_ac_MisalignedAccessFails=yes"
-        ;;
-    *)
-        eval "$as_ac_MisalignedAccessFails=no"
-        ;;
-esac
-fi
-eval ac_res=\$$as_ac_MisalignedAccessFails
-	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&5
-$as_echo "$ac_res" >&6; }
-if test `eval 'as_val=${'$as_ac_MisalignedAccessFails'};$as_echo "$as_val"'` = yes; then :
-
-$as_echo "#define SPANDSP_MISALIGNED_ACCESS_FAILS 1" >>confdefs.h
-
-    SPANDSP_MISALIGNED_ACCESS_FAILS="#define SPANDSP_MISALIGNED_ACCESS_FAILS 1"
-else
-  SPANDSP_MISALIGNED_ACCESS_FAILS="#undef SPANDSP_MISALIGNED_ACCESS_FAILS"
+  COND_AVX_TRUE='#'
+  COND_AVX_FALSE=
 fi
 
-if test "$enable_sse5" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE5 1" >>confdefs.h
-
-    enable_sse4a="yes"
-fi
-if test "$enable_sse4a" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE4A 1" >>confdefs.h
-
-    enable_sse4_2="yes"
-fi
-if test "$enable_sse4_2" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE4_2 1" >>confdefs.h
-
-    enable_sse4_1="yes"
-fi
-if test "$enable_sse4_1" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE4_1 1" >>confdefs.h
-
-    enable_ssse3="yes"
-fi
-if test "$enable_ssse3" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSSE3 1" >>confdefs.h
-
-    enable_sse3="yes"
-fi
-if test "$enable_sse3" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE3 1" >>confdefs.h
-
-    enable_sse2="yes"
-fi
-if test "$enable_sse2" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE2 1" >>confdefs.h
-
-    enable_sse="yes"
-fi
-if test "$enable_sse" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_SSE 1" >>confdefs.h
-
-    enable_mmx="yes"
-fi
-if test "$enable_mmx" = "yes" ; then
-
-$as_echo "#define SPANDSP_USE_MMX 1" >>confdefs.h
-
-fi
 
 if test "$enable_builtin_tiff" = "yes" ; then
-  abs_tiffdir="`cd $srcdir/../tiff-3.8.2/ && pwd`"
-  save_CFLAGS=$CFLAGS
-  CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
-  for ac_header in tiffio.h
+    abs_tiffdir="`cd $srcdir/../tiff-3.8.2/ && pwd`"
+    save_CFLAGS=$CFLAGS
+    CFLAGS="$CFLAGS -I$abs_tiffdir/libtiff"
+    for ac_header in tiffio.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "tiffio.h" "ac_cv_header_tiffio_h" "$ac_includes_default"
 if test "x$ac_cv_header_tiffio_h" = xyes; then :
@@ -19641,15 +19897,15 @@ fi
 
 done
 
-  CFLAGS="$save_CFLAGS"
-  COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
-  COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
-  LIBS="$LIBS $abs_tiffdir/libtiff/libtiff.la"
+    CFLAGS="$save_CFLAGS"
+    COMP_VENDOR_CFLAGS="-I$abs_tiffdir/libtiff $COMP_VENDOR_CFLAGS"
+    COMP_VENDOR_LDFLAGS="-L$abs_tiffdir/libtiff $COMP_VENDOR_LDFLAGS"
+    LIBS="$LIBS $abs_tiffdir/libtiff/libtiff.la"
 
 $as_echo "#define HAVE_LIBTIFF 1" >>confdefs.h
 
 else
-  for ac_header in tiffio.h
+    for ac_header in tiffio.h
 do :
   ac_fn_c_check_header_mongrel "$LINENO" "tiffio.h" "ac_cv_header_tiffio_h" "$ac_includes_default"
 if test "x$ac_cv_header_tiffio_h" = xyes; then :
@@ -19661,7 +19917,7 @@ fi
 
 done
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIFFOpen in -ltiff" >&5
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIFFOpen in -ltiff" >&5
 $as_echo_n "checking for TIFFOpen in -ltiff... " >&6; }
 if ${ac_cv_lib_tiff_TIFFOpen+:} false; then :
   $as_echo_n "(cached) " >&6
@@ -19705,10 +19961,67 @@ _ACEOF
   LIBS="-ltiff $LIBS"
 
 else
-  as_fn_error $? "\"Can't build without libtiff (does your system require a libtiff-devel package?)\"" "$LINENO" 5
+  as_fn_error $? "\"Cannot build without libtiff (does your system require a libtiff-devel package?)\"" "$LINENO" 5
 fi
 
 fi
+for ac_header in jpeglib.h
+do :
+  ac_fn_c_check_header_mongrel "$LINENO" "jpeglib.h" "ac_cv_header_jpeglib_h" "$ac_includes_default"
+if test "x$ac_cv_header_jpeglib_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_JPEGLIB_H 1
+_ACEOF
+
+fi
+
+done
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_start_compress in -ljpeg" >&5
+$as_echo_n "checking for jpeg_start_compress in -ljpeg... " >&6; }
+if ${ac_cv_lib_jpeg_jpeg_start_compress+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-ljpeg  $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char jpeg_start_compress ();
+int
+main ()
+{
+return jpeg_start_compress ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_jpeg_jpeg_start_compress=yes
+else
+  ac_cv_lib_jpeg_jpeg_start_compress=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_start_compress" >&5
+$as_echo "$ac_cv_lib_jpeg_jpeg_start_compress" >&6; }
+if test "x$ac_cv_lib_jpeg_jpeg_start_compress" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBJPEG 1
+_ACEOF
+
+  LIBS="-ljpeg $LIBS"
+
+fi
+
 
 TESTLIBS="$SIMLIBS $TESTLIBS"
 
@@ -19910,6 +20223,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${COND_SSE5_TRUE}" && test -z "${COND_SSE5_FALSE}"; then
   as_fn_error $? "conditional \"COND_SSE5\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${COND_AVX_TRUE}" && test -z "${COND_AVX_FALSE}"; then
+  as_fn_error $? "conditional \"COND_AVX\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 

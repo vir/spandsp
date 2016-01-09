@@ -208,7 +208,7 @@ static void equalizer_restore(v27ter_rx_state_t *s)
     s->eq_delta = EQUALIZER_DELTA/V27TER_EQUALIZER_LEN;
 #endif
 
-    s->eq_put_step = (s->bit_rate == 4800)  ?  RX_PULSESHAPER_4800_COEFF_SETS*5/2  :  RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2);
+    s->eq_put_step = (s->bit_rate == 4800)  ?  (RX_PULSESHAPER_4800_COEFF_SETS*5/2 - 1)  :  (RX_PULSESHAPER_2400_COEFF_SETS*20/(3*2) - 1);
     s->eq_step = 0;
 }
 /*- End of function --------------------------------------------------------*/
