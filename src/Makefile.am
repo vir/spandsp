@@ -322,7 +322,8 @@ nobase_include_HEADERS = spandsp/ademco_contactid.h \
 
 nodist_include_HEADERS = spandsp.h
 
-noinst_HEADERS = faxfont.h \
+noinst_HEADERS = cielab_luts.h \
+                 faxfont.h \
                  filter_tools.h \
                  gsm0610_local.h \
                  lpc10_encdecs.h \

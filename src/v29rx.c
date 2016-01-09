@@ -44,9 +44,6 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
-#include "spandsp/fast_convert.h"
-#include "spandsp/math_fixed.h"
-#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -255,8 +252,8 @@ static __inline__ complexi16_t complex_mul_q4_12(const complexi16_t *x, const co
 {
     complexi16_t z;
 
-    z.re = ((int32_t) x->re*y->re - (int32_t) x->im*y->im) >> FP_SHIFT_FACTOR;
-    z.im = ((int32_t) x->re*y->im + (int32_t) x->im*y->re) >> FP_SHIFT_FACTOR;
+    z.re = ((int32_t) x->re*(int32_t) y->re - (int32_t) x->im*(int32_t) y->im) >> FP_SHIFT_FACTOR;
+    z.im = ((int32_t) x->re*(int32_t) y->im + (int32_t) x->im*(int32_t) y->re) >> FP_SHIFT_FACTOR;
     return z;
 }
 /*- End of function --------------------------------------------------------*/
@@ -292,8 +289,8 @@ static void tune_equalizer(v29_rx_state_t *s, const complexi16_t *z, const compl
     /* Find the x and y mismatch from the exact constellation position. */
     err.re = target->re*FP_FACTOR - z->re;
     err.im = target->im*FP_FACTOR - z->im;
-    err.re = ((int32_t) err.re*s->eq_delta) >> 15;
-    err.im = ((int32_t) err.im*s->eq_delta) >> 15;
+    err.re = ((int32_t) err.re*(int32_t) s->eq_delta) >> 15;
+    err.im = ((int32_t) err.im*(int32_t) s->eq_delta) >> 15;
     cvec_circular_lmsi16(s->eq_buf, s->eq_coeff, V29_EQUALIZER_LEN, s->eq_step, &err);
 }
 #else
@@ -542,7 +539,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
         i = (v > 1000.0f)  ?  5  :  1;
         if (s->baud_phase < 0.0f)
             i = -i;
-        //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
+        //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
@@ -610,8 +607,8 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         {
             /* Record the current phase angle */
             s->training_stage = TRAINING_STAGE_LOG_PHASE;
-            vec_zeroi32(s->diff_angles, 16);
-            s->last_angles[0] = arctan2(z.im, z.re);
+            s->angles[0] =
+            s->start_angles[0] = arctan2(z.im, z.re);
 #if defined(SPANDSP_USE_FIXED_POINT)
             if (s->agc_scaling_save == 0)
                 s->agc_scaling_save = s->agc_scaling;
@@ -624,7 +621,8 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
     case TRAINING_STAGE_LOG_PHASE:
         /* Record the current alternate phase angle */
         target = &zero;
-        s->last_angles[1] = arctan2(z.im, z.re);
+        s->angles[1] =
+        s->start_angles[1] = arctan2(z.im, z.re);
         s->training_count = 1;
         s->training_stage = TRAINING_STAGE_WAIT_FOR_CDCD;
         break;
@@ -633,10 +631,8 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         angle = arctan2(z.im, z.re);
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDCD segment */
-        i = s->training_count + 1;
-        ang = angle - s->last_angles[i & 1];
-        s->last_angles[i & 1] = angle;
-        s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
+        ang = angle - s->angles[(s->training_count - 1) & 0xF];
+        s->angles[(s->training_count + 1) & 0xF] = angle;
         if ((ang > DDS_PHASE(45.0f)  ||  ang < DDS_PHASE(-45.0f))  &&  s->training_count >= 13)
         {
             /* We seem to have a phase reversal */
@@ -647,11 +643,12 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
             /* Step back a few symbols so we don't get ISI distorting things. */
             i = (s->training_count - 8) & ~1;
             /* Avoid the possibility of a divide by zero */
-            if (i > 1)
+            if (i)
             {
                 j = i & 0xF;
-                ang = (s->diff_angles[j] + s->diff_angles[j | 0x1])/(i - 1);
-                s->carrier_phase_rate += 3*16*(ang/20);
+                ang = (s->angles[j] - s->start_angles[0])/i
+                    + (s->angles[j | 0x1] - s->start_angles[1])/i;
+                s->carrier_phase_rate += 3*(ang/20);
             }
             span_log(&s->logging, SPAN_LOG_FLOW, "Coarse carrier frequency %7.2f\n", dds_frequencyf(s->carrier_phase_rate));
             /* Check if the carrier frequency is plausible */
@@ -723,12 +720,11 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         if (++s->training_count >= V29_TRAINING_SEG_3_LEN - 48)
         {
             s->training_stage = TRAINING_STAGE_TRAIN_ON_CDCD_AND_TEST;
+            s->training_error = 0.0f;
 #if defined(SPANDSP_USE_FIXED_POINT)
-            s->training_error = 0;
             s->carrier_track_i = 200;
             s->carrier_track_p = 1000000;
 #else
-            s->training_error = 0.0f;
             s->carrier_track_i = 200.0f;
             s->carrier_track_p = 1000000.0f;
 #endif
@@ -951,12 +947,10 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
            parked, after training failure. */
         s->eq_put_step -= RX_PULSESHAPER_COEFF_SETS;
         step = -s->eq_put_step;
+        if (step > RX_PULSESHAPER_COEFF_SETS - 1)
+            step = RX_PULSESHAPER_COEFF_SETS - 1;
         if (step < 0)
             step += RX_PULSESHAPER_COEFF_SETS;
-        if (step < 0)
-            step = 0;
-        else if (step > RX_PULSESHAPER_COEFF_SETS - 1)
-            step = RX_PULSESHAPER_COEFF_SETS - 1;
 #if defined(SPANDSP_USE_FIXED_POINT)
         v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
         sample.re = (v*s->agc_scaling) >> 15;
@@ -992,10 +986,10 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             /* Only AGC until we have locked down the setting. */
 #if defined(SPANDSP_USE_FIXED_POINT)
             if (s->agc_scaling_save == 0)
-                s->agc_scaling = (float) FP_FACTOR*32768.0f*(1.0f/RX_PULSESHAPER_GAIN)*1.25f/sqrtf(power);
+                s->agc_scaling = (float) FP_FACTOR*32768.0f*(1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
 #else
             if (s->agc_scaling_save == 0.0f)
-                s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*1.25f/sqrtf(power);
+                s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
 #endif
             /* Pulse shape while still at the carrier frequency, using a quadrature
                pair of filters. This results in a properly bandpass filtered complex
@@ -1006,8 +1000,8 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
             sample.im = (v*s->agc_scaling) >> 15;
             z = dds_lookup_complexi16(s->carrier_phase);
-            zz.re = ((int32_t) sample.re*z.re - (int32_t) sample.im*z.im) >> 15;
-            zz.im = ((int32_t) -sample.re*z.im - (int32_t) sample.im*z.re) >> 15;
+            zz.re = ((int32_t) sample.re*(int32_t) z.re - (int32_t) sample.im*(int32_t) z.im) >> 15;
+            zz.im = ((int32_t) -sample.re*(int32_t) z.im - (int32_t) sample.im*(int32_t) z.re) >> 15;
 #else
             v = vec_circular_dot_prodf(s->rrc_filter, rx_pulseshaper_im[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
             sample.im = v*s->agc_scaling;
@@ -1062,7 +1056,7 @@ SPAN_DECLARE(void) v29_rx_set_put_bit(v29_rx_state_t *s, put_bit_func_t put_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;

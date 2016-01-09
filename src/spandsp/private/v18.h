@@ -56,7 +56,6 @@ struct v18_state_s
     int rx_msg_len;
     int bit_pos;
     int in_progress;
-    //int repeat_shifts;
 
     /*! \brief Error and flow logging control */
     logging_state_t logging;

@@ -49,22 +49,19 @@ struct v17_tx_state_s
     /*! \brief A user specified opaque pointer passed to the status function. */
     void *status_user_data;
 
+    /*! \brief The gain factor needed to achieve the specified output power. */
 #if defined(SPANDSP_USE_FIXED_POINT)
-    /*! \brief The gain factor needed to achieve the specified output power. */
     int32_t gain;
-    /*! \brief A pointer to the constellation currently in use. */
-    const complexi16_t *constellation;
-    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
-    complexi16_t rrc_filter[2*V17_TX_FILTER_STEPS];
 #else
-    /*! \brief The gain factor needed to achieve the specified output power. */
     float gain;
-    /*! \brief A pointer to the constellation currently in use. */
-    const complexf_t *constellation;
-    /*! \brief The root raised cosine (RRC) pulse shaping filter buffer. */
-    complexf_t rrc_filter[2*V17_TX_FILTER_STEPS];
 #endif
 
+    /*! \brief The route raised cosine (RRC) pulse shaping filter buffer. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+    complexi16_t rrc_filter[2*V17_TX_FILTER_STEPS];
+#else
+    complexf_t rrc_filter[2*V17_TX_FILTER_STEPS];
+#endif
     /*! \brief Current offset into the RRC pulse shaping filter buffer. */
     int rrc_filter_step;
 
@@ -93,6 +90,12 @@ struct v17_tx_state_s
     /*! \brief The current fractional phase of the baud timing. */
     int baud_phase;
     
+    /*! \brief A pointer to the constellation currently in use. */
+#if defined(SPANDSP_USE_FIXED_POINT)
+    const complexi16_t *constellation;
+#else
+    const complexf_t *constellation;
+#endif
     /*! \brief The current number of data bits per symbol. This does not include
                the redundant bit. */
     int bits_per_symbol;

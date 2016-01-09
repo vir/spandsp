@@ -20,13 +20,6 @@
 
 AC_INIT
 
-m4_include(m4/ax_compiler_vendor.m4)
-m4_include(m4/ax_check_real_file.m4)
-m4_include(m4/ax_fixed_point_machine.m4)
-m4_include(m4/ax_misaligned_access_fails.m4)
-m4_include(m4/ax_c99_features.m4)
-m4_include(m4/ax_check_export_capability.m4)
-
 SPANDSP_MAJOR_VERSION=0
 SPANDSP_MINOR_VERSION=0
 SPANDSP_MICRO_VERSION=6
@@ -34,6 +27,13 @@ SPANDSP_MICRO_VERSION=6
 SPANDSP_LT_CURRENT=2
 SPANDSP_LT_REVISION=0
 SPANDSP_LT_AGE=0
+
+m4_include(m4/ax_compiler_vendor.m4)
+m4_include(m4/ax_check_real_file.m4)
+m4_include(m4/ax_fixed_point_machine.m4)
+m4_include(m4/ax_misaligned_access_fails.m4)
+m4_include(m4/ax_c99_features.m4)
+m4_include(m4/ax_check_export_capability.m4)
 
 VERSION=$SPANDSP_MAJOR_VERSION.$SPANDSP_MINOR_VERSION.$SPANDSP_MICRO_VERSION
 PACKAGE=spandsp
@@ -43,8 +43,7 @@ AC_SUBST(SPANDSP_LT_REVISION)
 AC_SUBST(SPANDSP_LT_AGE)
 
 AC_CONFIG_SRCDIR([src/tone_generate.c])
-AC_CONFIG_AUX_DIR([config])
-AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_HEADERS([src/config.h:config-h.in])
 AM_INIT_AUTOMAKE($PACKAGE, $VERSION)
 

@@ -186,9 +186,9 @@ enum
 
 static int restart_modem(t31_state_t *s, int new_modem);
 static void hdlc_accept_frame(void *user_data, const uint8_t *msg, int len, int ok);
-static void set_rx_handler(t31_state_t *s, span_rx_handler_t rx_handler, span_rx_fillin_handler_t fillin_handler, void *user_data);
-static void set_tx_handler(t31_state_t *s, span_tx_handler_t handler, void *user_data);
-static void set_next_tx_handler(t31_state_t *s, span_tx_handler_t handler, void *user_data);
+static void set_rx_handler(t31_state_t *s, span_rx_handler_t *rx_handler, span_rx_fillin_handler_t *fillin_handler, void *user_data);
+static void set_tx_handler(t31_state_t *s, span_tx_handler_t *handler, void *user_data);
+static void set_next_tx_handler(t31_state_t *s, span_tx_handler_t *handler, void *user_data);
 static int v17_v21_rx(void *user_data, const int16_t amp[], int len);
 static int v17_v21_rx_fillin(void *user_data, int len);
 static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len);
@@ -415,6 +415,21 @@ static int process_rx_indicator(t38_core_state_t *t, void *user_data, int indica
 }
 /*- End of function --------------------------------------------------------*/
 
+static void process_hdlc_data(t31_t38_front_end_state_t *fe, const uint8_t *buf, int len)
+{
+    if (fe->hdlc_rx.len + len <= T31_T38_MAX_HDLC_LEN)
+    {
+        bit_reverse(fe->hdlc_rx.buf + fe->hdlc_rx.len, buf, len);
+        fe->hdlc_rx.len += len;
+    }
+    else
+    {
+        fe->rx_data_missing = TRUE;
+    }
+    /*endif*/
+}
+/*- End of function --------------------------------------------------------*/
+
 static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, int field_type, const uint8_t *buf, int len)
 {
     t31_state_t *s;
@@ -469,16 +484,7 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         /*endif*/
         if (len > 0)
         {
-            if (fe->hdlc_rx.len + len <= T31_T38_MAX_HDLC_LEN)
-            {
-                bit_reverse(fe->hdlc_rx.buf + fe->hdlc_rx.len, buf, len);
-                fe->hdlc_rx.len += len;
-            }
-            else
-            {
-                fe->rx_data_missing = TRUE;
-            }
-            /*endif*/
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
@@ -487,21 +493,22 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_OK!\n");
-            /* The sender has incorrectly included data in this message. It is unclear what we should do
-               with it, to maximise tolerance of buggy implementations. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_OK messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
+            fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
@@ -509,20 +516,21 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD!\n");
-            /* The sender has incorrectly included data in this message. We can safely ignore it, as the
-               bad FCS means we will throw away the whole message, anyway. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /*endif*/
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_BAD messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
+            fe->hdlc_rx.len = 0;
         }
         /*endif*/
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
         fe->timeout_rx_samples = fe->samples + ms_to_samples(MID_RX_TIMEOUT);
         break;
@@ -530,41 +538,45 @@ static int process_rx_data(t38_core_state_t *t, void *user_data, int data_type, 
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_OK_SIG_END!\n");
-            /* The sender has incorrectly included data in this message. It is unclear what we should do
-               with it, to maximise tolerance of buggy implementations. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_OK_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC OK, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             crc_itu16_append(fe->hdlc_rx.buf, fe->hdlc_rx.len);
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, !fe->rx_data_missing);
-            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            fe->hdlc_rx.len = 0;
         }
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
+        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
         fe->timeout_rx_samples = 0;
         break;
     case T38_FIELD_HDLC_FCS_BAD_SIG_END:
         if (len > 0)
         {
             span_log(&s->logging, SPAN_LOG_WARNING, "There is data in a T38_FIELD_HDLC_FCS_BAD_SIG_END!\n");
-            /* The sender has incorrectly included data in this message. We can safely ignore it, as the
-               bad FCS means we will throw away the whole message, anyway. */
+            /* The sender has incorrectly included data in this message. Cisco implemented inserting
+               HDLC data here and Commetrex followed for compatibility reasons. We should, too. */
+            process_hdlc_data(fe, buf, len);
         }
         /* Some T.38 implementations send multiple T38_FIELD_HDLC_FCS_BAD_SIG_END messages, in IFP packets with
            incrementing sequence numbers, which are actually repeats. They get through to this point because
            of the incrementing sequence numbers. We need to filter them here in a context sensitive manner. */
-        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+        if (fe->hdlc_rx.len > 0)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "Type %s - CRC bad, sig end (%s)\n", (fe->hdlc_rx.len >= 3)  ?  t30_frametype(fe->hdlc_rx.buf[2])  :  "???", (fe->rx_data_missing)  ?  "missing octets"  :  "clean");
             hdlc_accept_frame(s, fe->hdlc_rx.buf, fe->hdlc_rx.len, FALSE);
-            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
+            fe->hdlc_rx.len = 0;
         }
-        fe->hdlc_rx.len = 0;
         fe->rx_data_missing = FALSE;
+        if (t->current_rx_data_type != data_type  ||  t->current_rx_field_type != field_type)
+            hdlc_rx_status(s, SIG_STATUS_CARRIER_DOWN);
         fe->timeout_rx_samples = 0;
         break;
     case T38_FIELD_HDLC_SIG_END:
@@ -1328,7 +1340,7 @@ static void tone_detected(void *user_data, int tone, int level, int delay)
 /*- End of function --------------------------------------------------------*/
 
 #if 0
-static void v8_handler(void *user_data, v8_parms_t result)
+static void v8_handler(void *user_data, v8_parms_t *result)
 {
     t31_state_t *s;
 
@@ -1566,7 +1578,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     s->at_state.rx_signal_present = FALSE;
     s->at_state.rx_trained = FALSE;
     s->rx_frame_received = FALSE;
-    set_rx_handler(s, (span_rx_handler_t) &span_dummy_rx, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
+    set_rx_handler(s, (span_rx_handler_t *) &span_dummy_rx, (span_rx_fillin_handler_t *) &span_dummy_rx_fillin, NULL);
     use_hdlc = FALSE;
     switch (s->modem)
     {
@@ -1585,10 +1597,10 @@ static int restart_modem(t31_state_t *s, int new_modem)
             /* Do V.21/HDLC receive in parallel. The other end may send its
                first message at any time. The CNG tone will continue until
                we get a valid preamble. */
-            set_rx_handler(s, (span_rx_handler_t) &cng_rx, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, s);
+            set_rx_handler(s, (span_rx_handler_t *) &cng_rx, (span_rx_fillin_handler_t *) &span_dummy_rx_fillin, s);
             t31_v21_rx(s);
-            set_tx_handler(s, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &modem_connect_tones_tx, &t->connect_tx);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->at_state.transmit = TRUE;
         break;
@@ -1598,10 +1610,10 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            set_rx_handler(s, (span_rx_handler_t) &cng_rx, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, s);
+            set_rx_handler(s, (span_rx_handler_t *) &cng_rx, (span_rx_fillin_handler_t *) &span_dummy_rx_fillin, s);
             t31_v21_rx(s);
             silence_gen_set(&t->silence_gen, 0);
-            set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+            set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
         }
         s->at_state.transmit = FALSE;
         break;
@@ -1615,8 +1627,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         else
         {
             modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CED);
-            set_tx_handler(s, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &modem_connect_tones_tx, &t->connect_tx);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->at_state.transmit = TRUE;
         break;
@@ -1635,8 +1647,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
             /* The spec says 1s +-15% of preamble. So, the minimum is 32 octets. */
             hdlc_tx_flags(&t->hdlc_tx, 32);
             fsk_tx_init(&t->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
-            set_tx_handler(s, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &fsk_tx, &t->v21_tx);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->hdlc_tx.final = FALSE;
         s->hdlc_tx.len = 0;
@@ -1649,7 +1661,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
         }
         else
         {
-            set_rx_handler(s, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &t->v21_rx);
+            set_rx_handler(s, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &t->v21_rx);
             t31_v21_rx(s);
         }
         break;
@@ -1681,8 +1693,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         else
         {
             v17_tx_restart(&t->fast_modems.v17_tx, s->bit_rate, FALSE, s->short_train);
-            set_tx_handler(s, (span_tx_handler_t) &v17_tx, &t->fast_modems.v17_tx);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &v17_tx, &t->fast_modems.v17_tx);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
@@ -1691,7 +1703,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V17_RX:
         if (!s->t38_mode)
         {
-            set_rx_handler(s, (span_rx_handler_t) &v17_v21_rx, (span_rx_fillin_handler_t) &v17_v21_rx_fillin, s);
+            set_rx_handler(s, (span_rx_handler_t *) &v17_v21_rx, (span_rx_fillin_handler_t *) &v17_v21_rx_fillin, s);
             v17_rx_restart(&t->fast_modems.v17_rx, s->bit_rate, s->short_train);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
@@ -1718,8 +1730,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         else
         {
             v27ter_tx_restart(&t->fast_modems.v27ter_tx, s->bit_rate, FALSE);
-            set_tx_handler(s, (span_tx_handler_t) &v27ter_tx, &t->fast_modems.v27ter_tx);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &v27ter_tx, &t->fast_modems.v27ter_tx);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
@@ -1728,7 +1740,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V27TER_RX:
         if (!s->t38_mode)
         {
-            set_rx_handler(s, (span_rx_handler_t) &v27ter_v21_rx, (span_rx_fillin_handler_t) &v27ter_v21_rx_fillin, s);
+            set_rx_handler(s, (span_rx_handler_t *) &v27ter_v21_rx, (span_rx_fillin_handler_t *) &v27ter_v21_rx_fillin, s);
             v27ter_rx_restart(&t->fast_modems.v27ter_rx, s->bit_rate, FALSE);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
@@ -1755,8 +1767,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         else
         {
             v29_tx_restart(&t->fast_modems.v29_tx, s->bit_rate, FALSE);
-            set_tx_handler(s, (span_tx_handler_t) &v29_tx, &t->fast_modems.v29_tx);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &v29_tx, &t->fast_modems.v29_tx);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->tx.out_bytes = 0;
         s->tx.data_started = FALSE;
@@ -1765,7 +1777,7 @@ static int restart_modem(t31_state_t *s, int new_modem)
     case FAX_MODEM_V29_RX:
         if (!s->t38_mode)
         {
-            set_rx_handler(s, (span_rx_handler_t) &v29_v21_rx, (span_rx_fillin_handler_t) &v29_v21_rx_fillin, s);
+            set_rx_handler(s, (span_rx_handler_t *) &v29_v21_rx, (span_rx_fillin_handler_t *) &v29_v21_rx_fillin, s);
             v29_rx_restart(&t->fast_modems.v29_rx, s->bit_rate, FALSE);
             /* Allow for +FCERROR/+FRH:3 */
             t31_v21_rx(s);
@@ -1783,18 +1795,18 @@ static int restart_modem(t31_state_t *s, int new_modem)
         else
         {
             silence_gen_set(&t->silence_gen, 0);
-            set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->at_state.transmit = FALSE;
         break;
     case FAX_MODEM_SILENCE_RX:
         if (!s->t38_mode)
         {
-            set_rx_handler(s, (span_rx_handler_t) &silence_rx, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, s);
+            set_rx_handler(s, (span_rx_handler_t *) &silence_rx, (span_rx_fillin_handler_t *) &span_dummy_rx_fillin, s);
             silence_gen_set(&t->silence_gen, 0);
-            set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         }
         s->at_state.transmit = FALSE;
         break;
@@ -1808,8 +1820,8 @@ static int restart_modem(t31_state_t *s, int new_modem)
         {
             s->modem = FAX_MODEM_SILENCE_TX;
             silence_gen_alter(&t->silence_gen, ms_to_samples(200));
-            set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
-            set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+            set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
+            set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
             s->at_state.transmit = TRUE;
         }
         break;
@@ -2152,7 +2164,7 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
             s->at_state.rx_data_bytes = 0;
             s->at_state.transmit = FALSE;
             s->modem = FAX_MODEM_SILENCE_TX;
-            set_rx_handler(s, (span_rx_handler_t) &span_dummy_rx, (span_rx_fillin_handler_t) &span_dummy_rx_fillin, NULL);
+            set_rx_handler(s, (span_rx_handler_t *) &span_dummy_rx, (span_rx_fillin_handler_t *) &span_dummy_rx_fillin, NULL);
             t31_set_at_rx_mode(s, AT_MODE_OFFHOOK_COMMAND);
             at_put_response_code(&s->at_state, AT_RESPONSE_CODE_OK);
         }
@@ -2179,8 +2191,8 @@ SPAN_DECLARE(int) t31_at_rx(t31_state_t *s, const char *t, int len)
 /*- End of function --------------------------------------------------------*/
 
 static void set_rx_handler(t31_state_t *s,
-                           span_rx_handler_t rx_handler,
-                           span_rx_fillin_handler_t fillin_handler,
+                           span_rx_handler_t *rx_handler,
+                           span_rx_fillin_handler_t *fillin_handler,
                            void *user_data)
 {
     s->audio.modems.rx_handler = rx_handler;
@@ -2189,14 +2201,14 @@ static void set_rx_handler(t31_state_t *s,
 }
 /*- End of function --------------------------------------------------------*/
 
-static void set_tx_handler(t31_state_t *s, span_tx_handler_t handler, void *user_data)
+static void set_tx_handler(t31_state_t *s, span_tx_handler_t *handler, void *user_data)
 {
     s->audio.modems.tx_handler = handler;
     s->audio.modems.tx_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-static void set_next_tx_handler(t31_state_t *s, span_tx_handler_t handler, void *user_data)
+static void set_next_tx_handler(t31_state_t *s, span_tx_handler_t *handler, void *user_data)
 {
     s->audio.modems.next_tx_handler = handler;
     s->audio.modems.next_tx_user_data = user_data;
@@ -2254,7 +2266,7 @@ static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
         span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->fast_modems.v17_rx));
-        set_rx_handler(t, (span_rx_handler_t) &v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->fast_modems.v17_rx);
+        set_rx_handler(t, (span_rx_handler_t *) &v17_rx, (span_rx_fillin_handler_t *) &v17_rx_fillin, &s->fast_modems.v17_rx);
     }
     else
     {
@@ -2264,7 +2276,7 @@ static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
             /* We have received something, and the fast modem has not trained. We must
                be receiving valid V.21 */
             span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-            set_rx_handler(t, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
+            set_rx_handler(t, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &s->v21_rx);
         }
     }
     return len;
@@ -2297,7 +2309,7 @@ static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
         span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->fast_modems.v27ter_rx));
-        set_rx_handler(t, (span_rx_handler_t) &v27ter_rx, (span_rx_fillin_handler_t) &v27ter_rx_fillin, &s->fast_modems.v27ter_rx);
+        set_rx_handler(t, (span_rx_handler_t *) &v27ter_rx, (span_rx_fillin_handler_t *) &v27ter_rx_fillin, &s->fast_modems.v27ter_rx);
     }
     else
     {
@@ -2307,7 +2319,7 @@ static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
             /* We have received something, and the fast modem has not trained. We must
                be receiving valid V.21 */
             span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-            set_rx_handler(t, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
+            set_rx_handler(t, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &s->v21_rx);
         }
     }
     return len;
@@ -2340,7 +2352,7 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
         span_log(&s->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->fast_modems.v29_rx));
-        set_rx_handler(t, (span_rx_handler_t) &v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->fast_modems.v29_rx);
+        set_rx_handler(t, (span_rx_handler_t *) &v29_rx, (span_rx_fillin_handler_t *) &v29_rx_fillin, &s->fast_modems.v29_rx);
     }
     else
     {
@@ -2350,7 +2362,7 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
             /* We have received something, and the fast modem has not trained. We must
                be receiving valid V.21 */
             span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-            set_rx_handler(t, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
+            set_rx_handler(t, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &s->v21_rx);
         }
     }
     return len;
@@ -2463,13 +2475,13 @@ static int set_next_tx_type(t31_state_t *s)
     if (s->audio.next_tx_handler)
     {
         set_tx_handler(s, s->audio.next_tx_handler, s->audio.next_tx_user_data);
-        set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+        set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
         return 0;
     }
     /* There is nothing else to change to, so use zero length silence */
     silence_gen_alter(&s->audio.modems.silence_gen, 0);
-    set_tx_handler(s, (span_tx_handler_t) &silence_gen, &s->audio.modems.silence_gen);
-    set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
+    set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &s->audio.modems.silence_gen);
+    set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
     return -1;
 }
 /*- End of function --------------------------------------------------------*/
@@ -2558,7 +2570,7 @@ SPAN_DECLARE(t38_core_state_t *) t31_get_t38_core_state(t31_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 static int t31_t38_fe_init(t31_state_t *t,
-                           t38_tx_packet_handler_t tx_packet_handler,
+                           t38_tx_packet_handler_t *tx_packet_handler,
                            void *tx_packet_user_data)
 {
     t31_t38_front_end_state_t *s;
@@ -2591,11 +2603,11 @@ static int t31_t38_fe_init(t31_state_t *t,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t31_state_t *) t31_init(t31_state_t *s,
-                                     at_tx_handler_t at_tx_handler,
+                                     at_tx_handler_t *at_tx_handler,
                                      void *at_tx_user_data,
-                                     t31_modem_control_handler_t modem_control_handler,
+                                     t31_modem_control_handler_t *modem_control_handler,
                                      void *modem_control_user_data,
-                                     t38_tx_packet_handler_t tx_t38_packet_handler,
+                                     t38_tx_packet_handler_t *tx_t38_packet_handler,
                                      void *tx_t38_packet_user_data)
 {
 #if 0

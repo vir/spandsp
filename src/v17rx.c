@@ -65,13 +65,22 @@
 #include "spandsp/private/logging.h"
 #include "spandsp/private/v17rx.h"
 
-#include "v17_v32bis_tx_constellation_maps.h"
-#include "v17_v32bis_rx_constellation_maps.h"
-#if defined(SPANDSP_USE_FIXED_POINT)
+//#if defined (SPANDSP_USE_FIXED_POINT)
+//#define SPANDSP_USE_FIXED_POINTx
+//#endif
+
+#if defined(SPANDSP_USE_FIXED_POINTx)
+#define FP_SCALE(x)                     FP_Q_4_12(x)
+#define FP_FACTOR                       4096
+#define FP_SHIFT_FACTOR                 12
 #include "v17_v32bis_rx_fixed_rrc.h"
 #else
+#define FP_SCALE(x)                     (x)
 #include "v17_v32bis_rx_floating_rrc.h"
 #endif
+
+#include "v17_v32bis_tx_constellation_maps.h"
+#include "v17_v32bis_rx_constellation_maps.h"
 
 /*! The nominal frequency of the carrier, in Hertz */
 #define CARRIER_NOMINAL_FREQ            1800.0f
@@ -145,21 +154,15 @@ enum
 
 #if defined(SPANDSP_USE_FIXED_POINTx)
 static const int constellation_spacing[4] =
-{
-    ((int)(FP_FACTOR*1.414f),
-    ((int)(FP_FACTOR*2.0f)},
-    ((int)(FP_FACTOR*2.828f)},
-    ((int)(FP_FACTOR*4.0f)},
-};
 #else
 static const float constellation_spacing[4] =
-{
-    1.414f,
-    2.0f,
-    2.828f,
-    4.0f
-};
 #endif
+{
+    FP_SCALE(1.414f),
+    FP_SCALE(2.0f),
+    FP_SCALE(2.828f),
+    FP_SCALE(4.0f)
+};
 
 SPAN_DECLARE(float) v17_rx_carrier_frequency(v17_rx_state_t *s)
 {
@@ -239,7 +242,7 @@ static void equalizer_reset(v17_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINTx)
-    static const complexi16_t x = {3*FP_FACTOR, 0};
+    static const complexi16_t x = {FP_SCALE(3.0f), FP_SCALE(0.0f)};
 
     cvec_zeroi16(s->eq_coeff, V17_EQUALIZER_LEN);
     s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
@@ -279,8 +282,8 @@ static void tune_equalizer(v17_rx_state_t *s, const complexi16_t *z, const compl
     err.re = target->re*FP_FACTOR - z->re;
     err.im = target->im*FP_FACTOR - z->im;
     //span_log(&s->logging, SPAN_LOG_FLOW, "Equalizer error %f\n", sqrt(err.re*err.re + err.im*err.im));
-    err.re = ((int32_t) err.re*s->eq_delta) >> 15;
-    err.im = ((int32_t) err.im*s->eq_delta) >> 15;
+    err.re = ((int32_t) err.re*(int32_t) s->eq_delta) >> 15;
+    err.im = ((int32_t) err.im*(int32_t) s->eq_delta) >> 15;
     cvec_circular_lmsi16(s->eq_buf, s->eq_coeff, V17_EQUALIZER_LEN, s->eq_step, &err);
 }
 #else
@@ -365,11 +368,7 @@ static __inline__ float dist_sq(const complexf_t *x, const complexf_t *y)
 /*- End of function --------------------------------------------------------*/
 #endif
 
-#if defined(SPANDSP_USE_FIXED_POINTx)
-static int decode_baud(v17_rx_state_t *s, complexi16_t *z)
-#else
 static int decode_baud(v17_rx_state_t *s, complexf_t *z)
-#endif
 {
     static const uint8_t v32bis_4800_differential_decoder[4][4] =
     {
@@ -625,12 +624,16 @@ static __inline__ void symbol_sync(v17_rx_state_t *s)
 
 static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
 {
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    static const complexi16_t cdba[4] =
+#else
     static const complexf_t cdba[4] =
+#endif
     {
-        { 6.0f,  2.0f},
-        {-2.0f,  6.0f},
-        { 2.0f, -6.0f},
-        {-6.0f, -2.0f}
+        {FP_SCALE( 6.0f), FP_SCALE( 2.0f)},
+        {FP_SCALE(-2.0f), FP_SCALE( 6.0f)},
+        {FP_SCALE( 2.0f), FP_SCALE(-6.0f)},
+        {FP_SCALE(-6.0f), FP_SCALE(-2.0f)}
     };
     complexf_t z;
     complexf_t zz;
@@ -679,9 +682,9 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         if (++s->training_count >= 100)
         {
             /* Record the current phase angle */
+            s->angles[0] =
+            s->start_angles[0] = arctan2(z.im, z.re);
             s->training_stage = TRAINING_STAGE_LOG_PHASE;
-            vec_zeroi32(s->diff_angles, 16);
-            s->last_angles[0] = arctan2(z.im, z.re);
             if (s->agc_scaling_save == 0.0f)
                 s->agc_scaling_save = s->agc_scaling;
         }
@@ -696,16 +699,16 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* We should already know the accurate carrier frequency. All we need to sort
                out is the phase. */
             /* Check if we just saw A or B */
-            if ((uint32_t) (angle - s->last_angles[0]) < 0x80000000U)
+            if ((uint32_t) (angle - s->start_angles[0]) < 0x80000000U)
             {
-                angle = s->last_angles[0];
-                s->last_angles[0] = 0xC0000000 + 219937506;
-                s->last_angles[1] = 0x80000000 + 219937506;
+                angle = s->start_angles[0];
+                s->angles[0] = 0xC0000000 + 219937506;
+                s->angles[1] = 0x80000000 + 219937506;
             }
             else
             {
-                s->last_angles[0] = 0x80000000 + 219937506;
-                s->last_angles[1] = 0xC0000000 + 219937506;
+                s->angles[0] = 0x80000000 + 219937506;
+                s->angles[1] = 0xC0000000 + 219937506;
             }
             /* Make a step shift in the phase, to pull it into line. We need to rotate the equalizer
                buffer, as well as the carrier phase, for this to play out nicely. */
@@ -723,7 +726,8 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         }
         else
         {
-            s->last_angles[1] = angle;
+            s->angles[1] =
+            s->start_angles[1] = angle;
             s->training_stage = TRAINING_STAGE_WAIT_FOR_CDBA;
         }
         break;
@@ -732,11 +736,27 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         angle = arctan2(z.im, z.re);
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDBA segment */
-        i = s->training_count + 1;
-        ang = angle - s->last_angles[i & 1];
-        s->last_angles[i & 1] = angle;
-        s->diff_angles[i & 0xF] = s->diff_angles[(i - 2) & 0xF] + (ang >> 4);
-        if ((ang > DDS_PHASE(90.0f)  ||  ang < DDS_PHASE(-90.0f))  &&  s->training_count >= 13)
+        ang = angle - s->angles[(s->training_count - 1) & 0xF];
+        s->angles[(s->training_count + 1) & 0xF] = angle;
+
+        /* Do a coarse frequency adjustment about half way through the reversals, as if we wait until
+           the end, we might have rotated too far to correct properly. */
+        if (s->training_count == 100)
+        {
+            i = s->training_count;
+            j = i & 0xF;
+            ang = (s->angles[j] - s->start_angles[0])/i
+                + (s->angles[j | 0x1] - s->start_angles[1])/i;
+            s->carrier_phase_rate += 3*(ang/20);
+            //span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, %x, %x, dist %d\n", s->angles[j], s->start_angles[0], s->angles[j | 0x1], s->start_angles[1], i);
+
+            s->start_angles[0] = s->angles[j];
+            s->start_angles[1] = s->angles[j | 0x1];
+            //span_log(&s->logging, SPAN_LOG_FLOW, "%d %d %d %d %d\n", s->angles[s->training_count & 0xF], s->start_angles[0], s->angles[(s->training_count | 0x1) & 0xF], s->start_angles[1], s->training_count);
+            span_log(&s->logging, SPAN_LOG_FLOW, "First coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
+
+        }
+        if ((ang > 0x40000000  ||  ang < -0x40000000)  &&  s->training_count >= 13)
         {
             span_log(&s->logging, SPAN_LOG_FLOW, "We seem to have a reversal at symbol %d\n", s->training_count);
             /* We seem to have a phase reversal */
@@ -751,14 +771,16 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
             /* Step back a few symbols so we don't get ISI distorting things. */
             i = (s->training_count - 8) & ~1;
             /* Avoid the possibility of a divide by zero */
-            if (i > 1)
+            if (i - 100 + 8)
             {
                 j = i & 0xF;
-                ang = (s->diff_angles[j] + s->diff_angles[j | 0x1])/(i - 1);
-                s->carrier_phase_rate += 3*16*(ang/20);
-                span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, dist %d\n", s->last_angles[0], s->last_angles[1], i);
+                ang = (s->angles[j] - s->start_angles[0])/(i - 100 + 8)
+                    + (s->angles[j | 0x1] - s->start_angles[1])/(i - 100 + 8);
+                s->carrier_phase_rate += 3*(ang/20);
+                span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, %x, %x, dist %d\n", s->angles[j], s->start_angles[0], s->angles[j | 0x1], s->start_angles[1], i);
             }
-            span_log(&s->logging, SPAN_LOG_FLOW, "Coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
+            //span_log(&s->logging, SPAN_LOG_FLOW, "%d %d %d %d %d\n", s->angles[s->training_count & 0xF], s->start_angles[0], s->angles[(s->training_count | 0x1) & 0xF], s->start_angles[1], s->training_count);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Second coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
             /* Check if the carrier frequency is plausible */
             if (s->carrier_phase_rate < DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ - 20.0f)
                 ||
@@ -901,7 +923,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
         /* Look for the initial ABAB sequence to display a phase reversal, which will
            signal the start of the scrambled CDBA segment */
         angle = arctan2(z.im, z.re);
-        ang = angle - s->last_angles[s->training_count & 1];
+        ang = angle - s->angles[s->training_count & 1];
         if (ang > DDS_PHASE(90.0f)  ||  ang < DDS_PHASE(-90.0f))
         {
             /* We seem to have a phase reversal */
@@ -1311,8 +1333,8 @@ SPAN_DECLARE(int) v17_rx_restart(v17_rx_state_t *s, int bit_rate, int short_trai
 #endif
     if (short_train != 2)
         s->short_train = short_train;
-    memset(s->last_angles, 0, sizeof(s->last_angles));
-    memset(s->diff_angles, 0, sizeof(s->diff_angles));
+    memset(s->start_angles, 0, sizeof(s->start_angles));
+    memset(s->angles, 0, sizeof(s->angles));
 
     /* Initialise the TCM decoder parameters. */
     /* The accumulated distance vectors are set so state zero starts

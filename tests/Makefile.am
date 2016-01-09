@@ -37,6 +37,7 @@ EXTRA_DIST = fax_tests.sh \
              msvc/queue_tests.vcproj \
              msvc/t38_core_tests.vcproj \
              msvc/t38_non_ecm_buffer_tests.vcproj \
+             msvc/t38_terminal_tests.vcproj \
              msvc/v22bis_tests.vcproj \
              msvc/v29_tests.vcproj \
              msvc/v8_tests.vcproj \
@@ -84,8 +85,8 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     line_model_tests \
                     logging_tests \
                     lpc10_tests \
-                    math_fixed_tests \
                     make_g168_css \
+                    math_fixed_tests \
                     modem_connect_tones_tests \
                     modem_echo_tests \
                     noise_tests \
@@ -107,7 +108,11 @@ noinst_PROGRAMS =   ademco_contactid_tests \
                     t35_tests \
                     t38_core_tests \
                     t38_decode \
+                    t38_gateway_tests \
+                    t38_gateway_to_terminal_tests \
                     t38_non_ecm_buffer_tests \
+                    t38_terminal_tests \
+                    t38_terminal_to_gateway_tests \
                     t4_tests \
                     time_scale_tests \
                     timezone_tests \
@@ -237,11 +242,11 @@ logging_tests_LDADD = $(LIBDIR) -lspandsp
 lpc10_tests_SOURCES = lpc10_tests.c
 lpc10_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
-math_fixed_tests_SOURCES = math_fixed_tests.c
-math_fixed_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
-
 make_g168_css_SOURCES = make_g168_css.c
 make_g168_css_LDADD = $(LIBDIR) -lspandsp
+
+math_fixed_tests_SOURCES = math_fixed_tests.c
+math_fixed_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 modem_echo_tests_SOURCES = modem_echo_tests.c echo_monitor.cpp
 modem_echo_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
@@ -306,8 +311,20 @@ t38_core_tests_LDADD = $(LIBDIR) -lspandsp
 t38_decode_SOURCES = t38_decode.c fax_utils.c pcap_parse.c udptl.c
 t38_decode_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp -lpcap
 
+t38_gateway_tests_SOURCES = t38_gateway_tests.c fax_utils.c media_monitor.cpp
+t38_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+t38_gateway_to_terminal_tests_SOURCES = t38_gateway_to_terminal_tests.c fax_utils.c media_monitor.cpp
+t38_gateway_to_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
 t38_non_ecm_buffer_tests_SOURCES = t38_non_ecm_buffer_tests.c
 t38_non_ecm_buffer_tests_LDADD = $(LIBDIR) -lspandsp
+
+t38_terminal_tests_SOURCES = t38_terminal_tests.c fax_utils.c media_monitor.cpp
+t38_terminal_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
+
+t38_terminal_to_gateway_tests_SOURCES = t38_terminal_to_gateway_tests.c fax_utils.c media_monitor.cpp
+t38_terminal_to_gateway_tests_LDADD = -L$(top_builddir)/spandsp-sim -lspandsp-sim $(LIBDIR) -lspandsp
 
 t4_tests_SOURCES = t4_tests.c
 t4_tests_LDADD = $(LIBDIR) -lspandsp

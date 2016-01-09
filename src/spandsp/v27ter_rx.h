@@ -102,7 +102,7 @@ SPAN_DECLARE(void) v27ter_rx_set_put_bit(v27ter_rx_state_t *s, put_bit_func_t pu
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v27ter_rx_set_modem_status_handler(v27ter_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
 
 /*! Process a block of received V.27ter modem audio samples.
     \brief Process a block of received V.27ter modem audio samples.
@@ -126,11 +126,7 @@ SPAN_DECLARE_NONSTD(int) v27ter_rx_fillin(v27ter_rx_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
-#if defined(SPANDSP_USE_FIXED_POINTx)
-SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexi16_t **coeffs);
-#else
 SPAN_DECLARE(int) v27ter_rx_equalizer_state(v27ter_rx_state_t *s, complexf_t **coeffs);
-#endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.

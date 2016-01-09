@@ -1493,11 +1493,14 @@ SPAN_DECLARE(void) t4_tx_get_transfer_statistics(t4_tx_state_t *s, t4_stats_t *t
 SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int start_page, int stop_page)
 {
     int run_space;
+    int allocated;
 
+    allocated = FALSE;
     if (s == NULL)
     {
         if ((s = (t4_tx_state_t *) malloc(sizeof(*s))) == NULL)
             return NULL;
+        allocated = TRUE;
     }
     memset(s, 0, sizeof(*s));
     span_log_init(&s->logging, SPAN_LOG_NONE, NULL);
@@ -1507,17 +1510,27 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
     span_log(&s->logging, SPAN_LOG_FLOW, "Start tx document\n");
 
     if (open_tiff_input_file(s, file) < 0)
+    {
+        if (allocated)
+            free(s);
         return NULL;
+    }
     s->tiff.file = strdup(file);
     s->current_page =
     s->tiff.start_page = (start_page >= 0)  ?  start_page  :  0;
     s->tiff.stop_page = (stop_page >= 0)  ?  stop_page : INT_MAX;
 
     if (!TIFFSetDirectory(s->tiff.tiff_file, (tdir_t) s->current_page))
+    {
+        if (allocated)
+            free(s);
         return NULL;
+    }
     if (get_tiff_directory_info(s))
     {
         close_tiff_input_file(s);
+        if (allocated)
+            free(s);
         return NULL;
     }
 
@@ -1527,17 +1540,25 @@ SPAN_DECLARE(t4_tx_state_t *) t4_tx_init(t4_tx_state_t *s, const char *file, int
 
     run_space = (s->image_width + 4)*sizeof(uint32_t);
     if ((s->cur_runs = (uint32_t *) malloc(run_space)) == NULL)
+    {
+        if (allocated)
+            free(s);
         return NULL;
+    }
     if ((s->ref_runs = (uint32_t *) malloc(run_space)) == NULL)
     {
         free_buffers(s);
         close_tiff_input_file(s);
+        if (allocated)
+            free(s);
         return NULL;
     }
     if ((s->row_buf = malloc(s->bytes_per_row)) == NULL)
     {
         free_buffers(s);
         close_tiff_input_file(s);
+        if (allocated)
+            free(s);
         return NULL;
     }
     s->ref_runs[0] =

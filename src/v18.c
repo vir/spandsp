@@ -914,7 +914,7 @@ SPAN_DECLARE(int) v18_free(v18_state_t *s)
 
 SPAN_DECLARE(const char *) v18_mode_to_str(int mode)
 {
-    switch (mode & 0xFF)
+    switch ((mode & 0xFF))
     {
     case V18_MODE_NONE:
         return "None";

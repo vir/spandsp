@@ -2520,6 +2520,14 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+SPANDSP_MAJOR_VERSION=0
+SPANDSP_MINOR_VERSION=0
+SPANDSP_MICRO_VERSION=6
+
+SPANDSP_LT_CURRENT=2
+SPANDSP_LT_REVISION=0
+SPANDSP_LT_AGE=0
+
 # ===========================================================================
 #           http://autoconf-archive.cryp.to/ax_compiler_vendor.html
 # ===========================================================================
@@ -2694,14 +2702,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
  # AX_CHECK_EXPORT_CAPABILITY
 
 
-SPANDSP_MAJOR_VERSION=0
-SPANDSP_MINOR_VERSION=0
-SPANDSP_MICRO_VERSION=6
-
-SPANDSP_LT_CURRENT=2
-SPANDSP_LT_REVISION=0
-SPANDSP_LT_AGE=0
-
 VERSION=$SPANDSP_MAJOR_VERSION.$SPANDSP_MINOR_VERSION.$SPANDSP_MICRO_VERSION
 PACKAGE=spandsp
 
@@ -2737,7 +2737,6 @@ fi
 ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
-
 
 
 ac_config_headers="$ac_config_headers src/config.h:config-h.in"
@@ -19653,15 +19652,15 @@ if eval \${$as_ac_FixedPoint+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   case $host in
-      arc | arm | armble | armelb | armv2345 | armv345lb \
-    | bfin \
+      arc \
+    | arm | armble | armebl | armv2345 | armv345bl \
+    | arm-*  | armble-* | armebl-* | armv345-* \
+    | bfin | bfin-* \
     | mips | mipsbe | mipseb | mipsel | mipsle \
-    | tic54x | c54x* | tic55x | c55x* | tic6x | c6x* \
-    | xscale | xscaleebl \
-    | arm-*  | armbe-* | armle-* | armeb-* | armv*-* \
-    | bfin-* \
     | mips-* | mipsbe-* | mipseb-* | mipsel-* | mipsle-* \
+    | tic54x | c54x* | tic55x | c55x* | tic6x | c6x* \
     | tic30-* | tic4x-* | tic54x-* | tic55x-* | tic6x-* | tic80-* \
+    | xscale | xscaleebl \
     | xscale-* | xscaleebl-* )
         eval "$as_ac_FixedPoint=yes"
         ;;
