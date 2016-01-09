@@ -1119,10 +1119,7 @@ SPAN_DECLARE(int) t4_rx_start_page(t4_state_t *s)
     s->t4_t6_rx.black_white = 0;
 
     /* Initialise the reference line to all white */
-    s->ref_runs[0] =
-    s->ref_runs[1] =
-    s->ref_runs[2] =
-    s->ref_runs[3] = s->image_width;
+    s->ref_runs[0] = s->image_width;
 
     s->t4_t6_rx.b_cursor = 1;
     s->t4_t6_rx.a_cursor = 0;
