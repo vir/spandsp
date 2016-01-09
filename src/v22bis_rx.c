@@ -527,14 +527,14 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                 /* It looks like the answering machine is sending us a clean unscrambled 11 or 00 */
                 if (s->bit_rate == 2400)
                 {
-                    /* Try to establish at 2400bps */
+                    /* Try to establish at 2400bps. */
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting U0011 (S1) (Caller)\n");
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_U0011;
                     s->tx.training_count = 0;
                 }
                 else
                 {
-                    /* Only try to establish at 1200bps */
+                    /* Only try to establish at 1200bps. */
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 (1200) (Caller)\n");
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_S11;
                     s->tx.training_count = 0;
@@ -547,14 +547,14 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
         break;
     case V22BIS_RX_TRAINING_STAGE_UNSCRAMBLED_ONES_SUSTAINING:
         /* Calling modem only */
-        /* Wait for the end of the unscrambled ones at 1200bps */
+        /* Wait for the end of the unscrambled ones at 1200bps. */
         target = &v22bis_constellation[nearest];
         track_carrier(s, &z, target);
         raw_bits = phase_steps[((nearest >> 2) - (s->rx.constellation_state >> 2)) & 3];
         s->rx.constellation_state = nearest;
         if (raw_bits != s->rx.last_raw_bits)
         {
-            /* This looks like the end of the sustained initial unscrambled 11 or 00 */
+            /* This looks like the end of the sustained initial unscrambled 11 or 00. */
             s->tx.training_count = 0;
             s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
             s->rx.training_count = 0;
@@ -600,11 +600,11 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
             }
             if (s->rx.training_count >= ms_to_symbols(270))
             {
-                /* If we haven't seen the S1 signal by now, we are committed to be in 1200bps mode */
+                /* If we haven't seen the S1 signal by now, we are committed to be in 1200bps mode. */
                 if (s->calling_party)
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ Rx normal operation (1200)\n");
-                    /* The transmit side needs to sustain the scrambled ones for a timed period */
+                    /* The transmit side needs to sustain the scrambled ones for a timed period. */
                     s->tx.training_count = 0;
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
                     /* Normal reception starts immediately */
@@ -614,7 +614,7 @@ static void process_half_baud(v22bis_state_t *s, const complexf_t *sample)
                 else
                 {
                     span_log(&s->logging, SPAN_LOG_FLOW, "+++ starting S11 (1200) (Answerer)\n");
-                    /* The transmit side needs to sustain the scrambled ones for a timed period */
+                    /* The transmit side needs to sustain the scrambled ones for a timed period. */
                     s->tx.training_count = 0;
                     s->tx.training = V22BIS_TX_TRAINING_STAGE_TIMED_S11;
                     /* The receive side needs to wait a timed period, receiving scrambled ones,
