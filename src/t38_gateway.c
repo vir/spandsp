@@ -1955,7 +1955,7 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
 
     s = (t38_gateway_state_t *) t->frame_user_data;
     u = &s->core.to_t38;
-    if ((t->raw_bit_stream & 0x80))
+    if ((t->raw_bit_stream & 0x01))
     {
         /* Hit HDLC abort */
         t->rx_aborts++;
@@ -1963,6 +1963,23 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
             t->flags_seen = 0;
         else
             t->flags_seen = t->framing_ok_threshold - 1;
+        /*endif*/
+        if (t->len > 0)
+        {
+            span_log(&s->logging, SPAN_LOG_FLOW, "HDLC frame aborted at %d\n", t->len);
+            /* If we have sent some of this frame we need to treat the abort as though it is a CRC error,
+               as reporting a bad CRC is the only way T.38 allows us to scrub a frame in progress. */
+            /* It seems some boxes may not like us sending a _SIG_END here, and then another
+               when the carrier actually drops. Lets just send T38_FIELD_HDLC_FCS_OK here. */
+            if (t->len > 2)
+            {
+                category = (s->t38x.current_tx_data_type == T38_DATA_V21)  ?  T38_PACKET_CATEGORY_CONTROL_DATA  :  T38_PACKET_CATEGORY_IMAGE_DATA;
+                if (t38_core_send_data(&s->t38x.t38, s->t38x.current_tx_data_type, T38_FIELD_HDLC_FCS_BAD, NULL, 0, category) < 0)
+                    span_log(&s->logging, SPAN_LOG_WARNING, "T.38 send failed\n");
+                /*endif*/
+            }
+            /*endif*/
+        }
         /*endif*/
     }
     else
@@ -2043,7 +2060,10 @@ static void rx_flag_or_abort(hdlc_rx_state_t *t)
         {
             /* Check the flags are back-to-back when testing for valid preamble. This
                greatly reduces the chances of false preamble detection, and anything
-               which doesn't send them back-to-back is badly broken. */
+               which doesn't send them back-to-back is badly broken. When we are one
+               flag away from OK we should not apply the back-to-back consition, as
+               between an abort and the following start of frame things might not be
+               octet aligned. */
             if (t->flags_seen != t->framing_ok_threshold - 1  &&  t->num_bits != 7)
                 t->flags_seen = 0;
             /*endif*/
@@ -2086,12 +2106,24 @@ static void t38_hdlc_rx_put_bit(hdlc_rx_state_t *t, int new_bit)
     }
     /*endif*/
     t->raw_bit_stream = (t->raw_bit_stream << 1) | (new_bit & 1);
-    if ((t->raw_bit_stream & 0x3F) == 0x3E)
+    if ((t->raw_bit_stream & 0x3E) == 0x3E)
     {
-        /* Its time to either skip a bit, for stuffing, or process a flag or abort */
-        if ((t->raw_bit_stream & 0x40))
+        /* There are at least 5 ones in a row. We could be at a:
+            - point where stuffing occurs
+            - a flag
+            - an abort
+            - the result of bit errors */
+        /* Is this a bit to be skipped for destuffing? */
+        if ((t->raw_bit_stream & 0x41) == 0)
+            return;
+        /*endif*/
+        /* Is this a flag or abort? */
+        if ((t->raw_bit_stream & 0xFE) == 0x7E)
+        {
             rx_flag_or_abort(t);
-        return;
+            return;
+        }
+        /*endif*/
     }
     /*endif*/
     t->num_bits++;
