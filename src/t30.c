@@ -58,6 +58,7 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #if defined(SPANDSP_SUPPORT_T85)
@@ -73,6 +74,7 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/timezone.h"
 #if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
@@ -1327,7 +1329,7 @@ static int build_dcs(t30_state_t *s)
         set_ctrl_bits(s->dcs_frame, T30_MIN_SCAN_0MS, 21);
         break;
     case T4_COMPRESSION_ITU_T4_2D:
-        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_CODING);
+        set_ctrl_bit(s->dcs_frame, T30_DCS_BIT_2D_MODE);
         set_ctrl_bits(s->dcs_frame, s->min_scan_time_code, 21);
         break;
     case T4_COMPRESSION_ITU_T4_1D:
@@ -2289,7 +2291,7 @@ static int process_rx_dcs(t30_state_t *s, const uint8_t *msg, int len)
     {
         s->line_encoding = T4_COMPRESSION_ITU_T6;
     }
-    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_CODING))
+    else if (test_ctrl_bit(dcs_frame, T30_DCS_BIT_2D_MODE))
     {
         s->line_encoding = T4_COMPRESSION_ITU_T4_2D;
     }
@@ -2388,7 +2390,6 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
     int j;
     int frame_no;
     int first_bad_frame;
-    int image_ended;
 #if defined(VET_ALL_FCD_FRAMES)
     int first;
     int expected_len;
@@ -2518,13 +2519,11 @@ static int process_rx_pps(t30_state_t *s, const uint8_t *msg, int len)
     if (s->rx_ecm_block_ok)
     {
         span_log(&s->logging, SPAN_LOG_FLOW, "Partial page OK - committing block %d, %d frames\n", s->ecm_block, s->ecm_frames);
-        image_ended = FALSE;
         for (i = 0;  i < s->ecm_frames;  i++)
         {
             if (t4_rx_put_chunk(&s->t4.rx, s->ecm_data[i], s->ecm_len[i]))
             {
                 /* This is the end of the document */
-                image_ended = TRUE;
                 break;
             }
         }
@@ -6241,11 +6240,11 @@ SPAN_DECLARE(int) t30_restart(t30_state_t *s)
 
 SPAN_DECLARE(t30_state_t *) t30_init(t30_state_t *s,
                                      int calling_party,
-                                     t30_set_handler_t *set_rx_type_handler,
+                                     t30_set_handler_t set_rx_type_handler,
                                      void *set_rx_type_user_data,
-                                     t30_set_handler_t *set_tx_type_handler,
+                                     t30_set_handler_t set_tx_type_handler,
                                      void *set_tx_type_user_data,
-                                     t30_send_hdlc_handler_t *send_hdlc_handler,
+                                     t30_send_hdlc_handler_t send_hdlc_handler,
                                      void *send_hdlc_user_data)
 {
     if (s == NULL)

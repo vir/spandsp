@@ -115,7 +115,30 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 
 static void v27ter_rx_status(void *user_data, int status)
 {
+    v27ter_rx_state_t *s;
+    int i;
+    int len;
+#if defined(SPANDSP_USE_FIXED_POINTx)
+    complexi16_t *coeffs;
+#else
+    complexf_t *coeffs;
+#endif
+
     printf("V.27ter rx status is %s (%d)\n", signal_status_to_str(status), status);
+    s = (v27ter_rx_state_t *) user_data;
+    switch (status)
+    {
+    case SIG_STATUS_TRAINING_SUCCEEDED:
+        len = v27ter_rx_equalizer_state(s, &coeffs);
+        printf("Equalizer:\n");
+        for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINTx)
+            printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/4096.0f, coeffs[i].im/4096.0f);
+#else
+            printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
+#endif
+        break;
+    }
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -126,6 +149,7 @@ static void v27terputbit(void *user_data, int bit)
         v27ter_rx_status(user_data, bit);
         return;
     }
+
     if (decode_test_file)
         printf("Rx bit %d - %d\n", rx_bits++, bit);
     else
@@ -397,6 +421,9 @@ int main(int argc, char *argv[])
     {
         /* We will generate V.27ter audio, and add some noise to it. */
         tx = v27ter_tx_init(NULL, test_bps, tep, v27tergetbit, NULL);
+        logging = v27ter_tx_get_logging_state(tx);
+        span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(logging, "V.27ter-tx");
         v27ter_tx_power(tx, signal_level);
         v27ter_tx_set_modem_status_handler(tx, v27ter_tx_status, (void *) tx);
         /* Move the carrier off a bit */
@@ -414,11 +441,11 @@ int main(int argc, char *argv[])
     }
 
     rx = v27ter_rx_init(NULL, test_bps, v27terputbit, NULL);
-    v27ter_rx_set_modem_status_handler(rx, v27ter_rx_status, (void *) rx);
-    v27ter_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
     logging = v27ter_rx_get_logging_state(rx);
     span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
     span_log_set_tag(logging, "V.27ter-rx");
+    v27ter_rx_set_modem_status_handler(rx, v27ter_rx_status, (void *) rx);
+    v27ter_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
 
 #if defined(ENABLE_GUI)
     if (use_gui)
@@ -532,7 +559,7 @@ int main(int argc, char *argv[])
 #endif
     if (decode_test_file)
     {
-        if (sf_close(inhandle))
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
@@ -540,7 +567,7 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (sf_close(outhandle))
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);

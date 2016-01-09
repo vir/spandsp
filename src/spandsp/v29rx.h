@@ -118,7 +118,11 @@ scrambler register) cannot be trusted for the test. The receive modem,
 therefore, only tests that bits starting at bit 24 are really ones. 
 */
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+typedef void (*qam_report_handler_t)(void *user_data, const complexi16_t *constel, const complexi16_t *target, int symbol);
+#else
 typedef void (*qam_report_handler_t)(void *user_data, const complexf_t *constel, const complexf_t *target, int symbol);
+#endif
 
 /*!
     V.29 modem receive side descriptor. This defines the working state for a
@@ -178,7 +182,7 @@ SPAN_DECLARE(void) v29_rx_set_put_bit(v29_rx_state_t *s, put_bit_func_t put_bit,
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_rx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_status_func_t handler, void *user_data);
 
 /*! Process a block of received V.29 modem audio samples.
     \brief Process a block of received V.29 modem audio samples.

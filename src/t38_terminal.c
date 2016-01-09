@@ -61,6 +61,7 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #if defined(SPANDSP_SUPPORT_T85)
@@ -78,6 +79,7 @@
 #include "spandsp/t38_terminal.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/timezone.h"
 #if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
@@ -91,7 +93,7 @@
 #include "spandsp/private/t38_terminal.h"
 
 /* Settings suitable for paced transmission over a UDP transport */
-#define DEFAULT_MS_PER_TX_CHUNK                 30
+#define DEFAULT_US_PER_TX_CHUNK                 30
 
 #define INDICATOR_TX_COUNT                      3
 #define DATA_TX_COUNT                           1
@@ -606,7 +608,7 @@ static void send_hdlc(void *user_data, const uint8_t *msg, int len)
 
 static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 {
-    if (s->t38_fe.ms_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
+    if (s->t38_fe.us_per_tx_chunk == 0  ||  s->t38_fe.tx_bit_rate == 0)
         return 0;
     /*endif*/
     return bits*1000000/s->t38_fe.tx_bit_rate;
@@ -616,9 +618,9 @@ static __inline__ int bits_to_us(t38_terminal_state_t *s, int bits)
 static void set_octets_per_data_packet(t38_terminal_state_t *s, int bit_rate)
 {
     s->t38_fe.tx_bit_rate = bit_rate;
-    if (s->t38_fe.ms_per_tx_chunk)
+    if (s->t38_fe.us_per_tx_chunk)
     {
-        s->t38_fe.octets_per_data_packet = s->t38_fe.ms_per_tx_chunk*bit_rate/(8*1000);
+        s->t38_fe.octets_per_data_packet = s->t38_fe.us_per_tx_chunk*bit_rate/(8*1000);
         /* Make sure we have a positive number (i.e. we didn't truncate to zero). */
         if (s->t38_fe.octets_per_data_packet < 1)
             s->t38_fe.octets_per_data_packet = 1;
@@ -647,7 +649,7 @@ static int set_no_signal(t38_terminal_state_t *s)
             s->t38_fe.timeout_tx_samples = 0;
         /*endif*/
 #endif
-        return s->t38_fe.ms_per_tx_chunk*1000;
+        return s->t38_fe.us_per_tx_chunk*1000;
     }
     /*endif*/
     delay = t38_core_send_indicator(&s->t38_fe.t38, T38_IND_NO_SIGNAL);
@@ -664,7 +666,7 @@ static int stream_no_signal(t38_terminal_state_t *s)
         s->t38_fe.timed_step = T38_TIMED_STEP_NONE;
     /*endif*/
 #endif
-    return s->t38_fe.ms_per_tx_chunk*1000;
+    return s->t38_fe.us_per_tx_chunk*1000;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -703,7 +705,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 if (fe->next_tx_samples >= fe->timeout_tx_samples)
                     fe->timed_step = T38_TIMED_STEP_NON_ECM_MODEM_3;
                 /*endif*/
-                return fe->ms_per_tx_chunk*1000;
+                return fe->us_per_tx_chunk*1000;
             }
             /*endif*/
 #endif
@@ -723,7 +725,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
             if (len < fe->octets_per_data_packet)
             {
                 /* That's the end of the image data. */
-                if (s->t38_fe.ms_per_tx_chunk)
+                if (s->t38_fe.us_per_tx_chunk)
                 {
                     /* Pad the end of the data with some zeros. If we just stop abruptly
                        at the end of the EOLs, some ATAs fail to clean up properly before
@@ -764,7 +766,7 @@ static int stream_non_ecm(t38_terminal_state_t *s)
                 /* Allow a bit more time than the data will take to play out, to ensure the far ATA does not
                    cut things short. */
                 delay = bits_to_us(s, 8*len);
-                if (s->t38_fe.ms_per_tx_chunk)
+                if (s->t38_fe.us_per_tx_chunk)
                     delay += 60000;
                 /*endif*/
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
@@ -827,7 +829,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 if (fe->next_tx_samples >= fe->timeout_tx_samples)
                     fe->timed_step = T38_TIMED_STEP_HDLC_MODEM_3;
                 /*endif*/
-                return fe->ms_per_tx_chunk*1000;
+                return fe->us_per_tx_chunk*1000;
             }
             /*endif*/
 #endif
@@ -866,7 +868,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                         /* We add a bit of extra time here, as with some implementations
                            the carrier falling too abruptly causes data loss. */
                         delay = bits_to_us(s, i*8 + fe->hdlc_tx.extra_bits);
-                        if (s->t38_fe.ms_per_tx_chunk)
+                        if (s->t38_fe.us_per_tx_chunk)
                             delay += 100000;
                         /*endif*/
                         front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
@@ -915,7 +917,7 @@ static int stream_hdlc(t38_terminal_state_t *s)
                 /* We add a bit of extra time here, as with some implementations
                    the carrier falling too abruptly causes data loss. */
                 delay = bits_to_us(s, fe->hdlc_tx.extra_bits);
-                if (s->t38_fe.ms_per_tx_chunk)
+                if (s->t38_fe.us_per_tx_chunk)
                     delay += 100000;
                 /*endif*/
                 front_end_status(s, T30_FRONT_END_SEND_STEP_COMPLETE);
@@ -1047,7 +1049,7 @@ SPAN_DECLARE(int) t38_terminal_send_timeout(t38_terminal_state_t *s, int samples
     /*endif*/
     /* Wait until the right time comes along, unless we are working in "no delays" mode, while talking to an
        IAF terminal. */
-    if (fe->ms_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
+    if (fe->us_per_tx_chunk  &&  fe->samples < fe->next_tx_samples)
         return FALSE;
     /*endif*/
     /* Its time to send something */
@@ -1096,7 +1098,7 @@ static void start_tx(t38_terminal_front_end_state_t *fe, int use_hdlc)
     /* The actual transmission process depends on whether we are sending at a paced manner,
        for interaction with a traditional FAX machine, or streaming as fast as we can, normally
        over a TCP connection to a machine directly connected to the internet. */
-    if (fe->ms_per_tx_chunk)
+    if (fe->us_per_tx_chunk)
     {
         /* Start the paced packet transmission process. */
         fe->timed_step = (use_hdlc)  ?  T38_TIMED_STEP_HDLC_MODEM  :  T38_TIMED_STEP_NON_ECM_MODEM;
@@ -1229,7 +1231,7 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, 1);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, 1);
-        s->t38_fe.ms_per_tx_chunk = 0;
+        s->t38_fe.us_per_tx_chunk = 0;
         s->t38_fe.chunking_modes &= ~T38_CHUNKING_SEND_REGULAR_INDICATORS;
     }
     else
@@ -1240,7 +1242,7 @@ SPAN_DECLARE(void) t38_terminal_set_config(t38_terminal_state_t *s, int config)
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_CONTROL_DATA_END, DATA_END_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA, DATA_TX_COUNT);
         t38_set_redundancy_control(&s->t38_fe.t38, T38_PACKET_CATEGORY_IMAGE_DATA_END, DATA_END_TX_COUNT);
-        s->t38_fe.ms_per_tx_chunk = DEFAULT_MS_PER_TX_CHUNK;
+        s->t38_fe.us_per_tx_chunk = DEFAULT_US_PER_TX_CHUNK;
         if ((config & (T38_TERMINAL_OPTION_REGULAR_INDICATORS | T38_TERMINAL_OPTION_2S_REPEATING_INDICATORS)))
             s->t38_fe.chunking_modes |= T38_CHUNKING_SEND_REGULAR_INDICATORS;
         else
@@ -1313,7 +1315,7 @@ static int t38_terminal_t38_fe_restart(t38_terminal_state_t *t)
 /*- End of function --------------------------------------------------------*/
 
 static int t38_terminal_t38_fe_init(t38_terminal_state_t *t,
-                                    t38_tx_packet_handler_t *tx_packet_handler,
+                                    t38_tx_packet_handler_t tx_packet_handler,
                                     void *tx_packet_user_data)
 {
     t38_terminal_front_end_state_t *s;
@@ -1360,7 +1362,7 @@ SPAN_DECLARE(int) t38_terminal_restart(t38_terminal_state_t *s,
 
 SPAN_DECLARE(t38_terminal_state_t *) t38_terminal_init(t38_terminal_state_t *s,
                                                        int calling_party,
-                                                       t38_tx_packet_handler_t *tx_packet_handler,
+                                                       t38_tx_packet_handler_t tx_packet_handler,
                                                        void *tx_packet_user_data)
 {
     if (tx_packet_handler == NULL)

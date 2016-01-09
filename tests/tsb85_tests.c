@@ -26,7 +26,7 @@
 /*! \file */
 
 #if defined(HAVE_CONFIG_H)
-#include <config.h>
+#include "config.h"
 #endif
 
 #include <inttypes.h>
@@ -69,7 +69,7 @@
 
 #define OUTPUT_TIFF_FILE_NAME   "tsb85.tif"
 
-#define OUTPUT_FILE_NAME_WAVE   "tsb85.wav"
+#define OUTPUT_WAVE_FILE_NAME   "tsb85.wav"
 
 #define SAMPLES_PER_CHUNK       160
 
@@ -79,6 +79,8 @@ int use_receiver_not_ready = FALSE;
 int test_local_interrupt = FALSE;
 
 const char *output_tiff_file_name;
+
+int log_audio = FALSE;
 
 fax_state_t *fax;
 faxtester_state_t state;
@@ -220,9 +222,9 @@ static int phase_d_handler(t30_state_t *s, void *user_data, int result)
     snprintf(tag, sizeof(tag), "%c: Phase D", i);
 
     printf("%c: Phase D handler on channel %c - (0x%X) %s\n", i, i, result, t30_frametype(result));
-    log_transfer_statistics(s, tag);
-    log_tx_parameters(s, tag);
-    log_rx_parameters(s, tag);
+    fax_log_page_transfer_statistics(s, tag);
+    fax_log_tx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
 
     if (use_receiver_not_ready)
         t30_set_receiver_not_ready(s, 3);
@@ -262,9 +264,9 @@ static void phase_e_handler(t30_state_t *s, void *user_data, int result)
     i = (intptr_t) user_data;
     snprintf(tag, sizeof(tag), "%c: Phase E", i);
     printf("%c: Phase E handler on channel %c - (%d) %s\n", i, i, result, t30_completion_code_to_str(result));    
-    log_transfer_statistics(s, tag);
-    log_tx_parameters(s, tag);
-    log_rx_parameters(s, tag);
+    fax_log_final_transfer_statistics(s, tag);
+    fax_log_tx_parameters(s, tag);
+    fax_log_rx_parameters(s, tag);
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -869,7 +871,7 @@ static int next_step(faxtester_state_t *s)
             else if (strcasecmp((const char *) tag, "TXFILE") == 0)
             {
                 sprintf(next_tx_file, "%s/%s", image_path, (const char *) value);
-printf("Push '%s'\n", next_tx_file);
+                printf("Push '%s'\n", next_tx_file);
             }
             return 0;
         }
@@ -1058,17 +1060,15 @@ static void exchange(faxtester_state_t *s)
     int len;
     int i;
     int total_audio_time;
-    int log_audio;
     logging_state_t *logging;
 
-    log_audio = TRUE;
     output_tiff_file_name = OUTPUT_TIFF_FILE_NAME;
 
     if (log_audio)
     {
-        if ((out_handle = sf_open_telephony_write(OUTPUT_FILE_NAME_WAVE, 2)) == NULL)
+        if ((out_handle = sf_open_telephony_write(OUTPUT_WAVE_FILE_NAME, 2)) == NULL)
         {
-            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot create audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             printf("Test failed\n");
             exit(2);
         }
@@ -1116,7 +1116,7 @@ static void exchange(faxtester_state_t *s)
 
         span_log_bump_samples(&s->logging, len);
                 
-        len = faxtester_tx(s, amp, 160);
+        len = faxtester_tx(s, amp, SAMPLES_PER_CHUNK);
         if (fax_rx(fax, amp, len))
             break;
         /*endif*/
@@ -1134,9 +1134,9 @@ static void exchange(faxtester_state_t *s)
     /*endfor*/
     if (log_audio)
     {
-        if (sf_close(out_handle))
+        if (sf_close_telephony(out_handle))
         {
-            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_FILE_NAME_WAVE);
+            fprintf(stderr, "    Cannot close audio file '%s'\n", OUTPUT_WAVE_FILE_NAME);
             printf("Test failed\n");
             exit(2);
         }
@@ -1295,10 +1295,14 @@ int main(int argc, char *argv[])
 
     xml_file_name = "../spandsp/tsb85.xml";
     test_name = "MRGN01";
-    while ((opt = getopt(argc, argv, "x:")) != -1)
+    log_audio = FALSE;
+    while ((opt = getopt(argc, argv, "lx:")) != -1)
     {
         switch (opt)
         {
+        case 'l':
+            log_audio = TRUE;
+            break;
         case 'x':
             xml_file_name = optarg;
             break;

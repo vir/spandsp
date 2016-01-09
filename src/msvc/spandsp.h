@@ -54,6 +54,7 @@
 #include <spandsp/schedule.h>
 #include <spandsp/g711.h>
 #include <spandsp/timing.h>
+#include <spandsp/math_fixed.h>
 #include <spandsp/vector_float.h>
 #include <spandsp/complex_vector_float.h>
 #include <spandsp/vector_int.h>
@@ -99,6 +100,7 @@
 #include <spandsp/v27ter_tx.h>
 /*#include <spandsp/v34.h>*/
 #include <spandsp/v18.h>
+#include <spandsp/timezone.h>
 #include <spandsp/t4_rx.h>
 #include <spandsp/t4_tx.h>
 #include <spandsp/image_translate.h>
@@ -119,6 +121,7 @@
 #include <spandsp/t38_gateway.h>
 #include <spandsp/t38_terminal.h>
 #include <spandsp/t31.h>
+#include <spandsp/ademco_contactid.h>
 #include <spandsp/adsi.h>
 #include <spandsp/oki_adpcm.h>
 #include <spandsp/ima_adpcm.h>
@@ -128,7 +131,6 @@
 #include <spandsp/gsm0610.h>
 #include <spandsp/plc.h>
 #include <spandsp/playout.h>
-#include <spandsp/timezone.h>
 
 #endif
 

@@ -114,7 +114,7 @@ static void reporter(void *user_data, int reason, bert_results_t *results)
 
 static void v29_rx_status(void *user_data, int status)
 {
-    v29_rx_state_t *rx;
+    v29_rx_state_t *s;
     int i;
     int len;
 #if defined(SPANDSP_USE_FIXED_POINT)
@@ -124,20 +124,17 @@ static void v29_rx_status(void *user_data, int status)
 #endif
 
     printf("V.29 rx status is %s (%d)\n", signal_status_to_str(status), status);
-    rx = (v29_rx_state_t *) user_data;
+    s = (v29_rx_state_t *) user_data;
     switch (status)
     {
     case SIG_STATUS_TRAINING_SUCCEEDED:
         printf("Training succeeded\n");
-#if defined(SPANDSP_USE_FIXED_POINT)
-        len = v29_rx_equalizer_state(rx, &coeffs);
+        len = v29_rx_equalizer_state(s, &coeffs);
         printf("Equalizer:\n");
         for (i = 0;  i < len;  i++)
+#if defined(SPANDSP_USE_FIXED_POINT)
             printf("%3d (%15.5f, %15.5f)\n", i, coeffs[i].re/4096.0f, coeffs[i].im/4096.0f);
 #else
-        len = v29_rx_equalizer_state(rx, &coeffs);
-        printf("Equalizer:\n");
-        for (i = 0;  i < len;  i++)
             printf("%3d (%15.5f, %15.5f) -> %15.5f\n", i, coeffs[i].re, coeffs[i].im, powerf(&coeffs[i]));
 #endif
         break;
@@ -147,15 +144,12 @@ static void v29_rx_status(void *user_data, int status)
 
 static void v29putbit(void *user_data, int bit)
 {
-    v29_rx_state_t *rx;
-    
     if (bit < 0)
     {
         v29_rx_status(user_data, bit);
         return;
     }
 
-    rx = (v29_rx_state_t *) user_data;
     if (decode_test_file)
         printf("Rx bit %d - %d\n", rx_bits++, bit);
     else
@@ -420,6 +414,9 @@ int main(int argc, char *argv[])
     {
         /* We will generate V.29 audio, and add some noise to it. */
         tx = v29_tx_init(NULL, test_bps, tep, v29getbit, NULL);
+        logging = v29_tx_get_logging_state(tx);
+        span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+        span_log_set_tag(logging, "V.29-tx");
         v29_tx_power(tx, signal_level);
         v29_tx_set_modem_status_handler(tx, v29_tx_status, (void *) tx);
 #if defined(WITH_SPANDSP_INTERNALS)
@@ -439,6 +436,9 @@ int main(int argc, char *argv[])
     }
 
     rx = v29_rx_init(NULL, test_bps, v29putbit, NULL);
+    logging = v29_rx_get_logging_state(rx);
+    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
+    span_log_set_tag(logging, "V.29-rx");
     v29_rx_signal_cutoff(rx, -45.5f);
     v29_rx_set_modem_status_handler(rx, v29_rx_status, (void *) rx);
     v29_rx_set_qam_report_handler(rx, qam_report, (void *) rx);
@@ -446,9 +446,6 @@ int main(int argc, char *argv[])
     /* Rotate the starting phase */
     rx->carrier_phase = 0x80000000;
 #endif
-    logging = v29_rx_get_logging_state(rx);
-    span_log_set_level(logging, SPAN_LOG_SHOW_SEVERITY | SPAN_LOG_SHOW_PROTOCOL | SPAN_LOG_FLOW);
-    span_log_set_tag(logging, "V.29-rx");
 
 #if defined(ENABLE_GUI)
     if (use_gui)
@@ -561,7 +558,7 @@ int main(int argc, char *argv[])
 #endif
     if (decode_test_file)
     {
-        if (sf_close(inhandle))
+        if (sf_close_telephony(inhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", decode_test_file);
             exit(2);
@@ -569,7 +566,7 @@ int main(int argc, char *argv[])
     }
     if (log_audio)
     {
-        if (sf_close(outhandle))
+        if (sf_close_telephony(outhandle))
         {
             fprintf(stderr, "    Cannot close audio file '%s'\n", OUT_FILE_NAME);
             exit(2);

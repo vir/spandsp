@@ -69,6 +69,7 @@
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v17tx.h"
 #include "spandsp/v17rx.h"
+#include "spandsp/timezone.h"
 #include "spandsp/super_tone_rx.h"
 #include "spandsp/modem_connect_tones.h"
 #include "spandsp/t4_rx.h"
@@ -89,6 +90,7 @@
 #include "spandsp/t38_gateway.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/timezone.h"
 #include "spandsp/private/silence_gen.h"
 #include "spandsp/private/fsk.h"
 #include "spandsp/private/v17tx.h"
@@ -196,7 +198,7 @@ static void non_ecm_remove_fill_and_put_bit(void *user_data, int bit);
 static void non_ecm_push_residue(t38_gateway_state_t *s);
 static void tone_detected(void *user_data, int tone, int level, int delay);
 
-static void set_rx_handler(t38_gateway_state_t *s, span_rx_handler_t *handler, span_rx_fillin_handler_t *fillin_handler, void *user_data)
+static void set_rx_handler(t38_gateway_state_t *s, span_rx_handler_t handler, span_rx_fillin_handler_t fillin_handler, void *user_data)
 {
     if (s->audio.modems.rx_handler != span_dummy_rx)
     {
@@ -210,14 +212,14 @@ static void set_rx_handler(t38_gateway_state_t *s, span_rx_handler_t *handler, s
 }
 /*- End of function --------------------------------------------------------*/
 
-static void set_tx_handler(t38_gateway_state_t *s, span_tx_handler_t *handler, void *user_data)
+static void set_tx_handler(t38_gateway_state_t *s, span_tx_handler_t handler, void *user_data)
 {
     s->audio.modems.tx_handler = handler;
     s->audio.modems.tx_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-static void set_next_tx_handler(t38_gateway_state_t *s, span_tx_handler_t *handler, void *user_data)
+static void set_next_tx_handler(t38_gateway_state_t *s, span_tx_handler_t handler, void *user_data)
 {
     s->audio.modems.next_tx_handler = handler;
     s->audio.modems.next_tx_user_data = user_data;
@@ -257,7 +259,7 @@ static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
         span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.17 (%.2fdBm0)\n", v17_rx_signal_power(&s->v17_rx));
-        set_rx_handler(t, (span_rx_handler_t *) &v17_rx, (span_rx_fillin_handler_t *) &v17_rx_fillin, &s->v17_rx);
+        set_rx_handler(t, (span_rx_handler_t) &v17_rx, (span_rx_fillin_handler_t) &v17_rx_fillin, &s->v17_rx);
     }
     else
     {
@@ -265,7 +267,7 @@ static int v17_v21_rx(void *user_data, const int16_t amp[], int len)
         if (s->rx_signal_present)
         {
             span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.17 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-            set_rx_handler(t, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &s->v21_rx);
+            set_rx_handler(t, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
         }
         /*endif*/
     }
@@ -300,7 +302,7 @@ static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
         span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.27ter (%.2fdBm0)\n", v27ter_rx_signal_power(&s->v27ter_rx));
-        set_rx_handler(t, (span_rx_handler_t *) &v27ter_rx, (span_rx_fillin_handler_t *) &v27ter_v21_rx_fillin, &s->v27ter_rx);
+        set_rx_handler(t, (span_rx_handler_t) &v27ter_rx, (span_rx_fillin_handler_t) &v27ter_v21_rx_fillin, &s->v27ter_rx);
     }
     else
     {
@@ -308,7 +310,7 @@ static int v27ter_v21_rx(void *user_data, const int16_t amp[], int len)
         if (s->rx_signal_present)
         {
             span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.27ter + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-            set_rx_handler(t, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &s->v21_rx);
+            set_rx_handler(t, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
         }
         /*endif*/
     }
@@ -343,7 +345,7 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
         /* The fast modem has trained, so we no longer need to run the slow
            one in parallel. */
         span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.29 (%.2fdBm0)\n", v29_rx_signal_power(&s->v29_rx));
-        set_rx_handler(t, (span_rx_handler_t *) &v29_rx, (span_rx_fillin_handler_t *) &v29_rx_fillin, &s->v29_rx);
+        set_rx_handler(t, (span_rx_handler_t) &v29_rx, (span_rx_fillin_handler_t) &v29_rx_fillin, &s->v29_rx);
     }
     else
     {
@@ -351,7 +353,7 @@ static int v29_v21_rx(void *user_data, const int16_t amp[], int len)
         if (s->rx_signal_present)
         {
             span_log(&t->logging, SPAN_LOG_FLOW, "Switching from V.29 + V.21 to V.21 (%.2fdBm0)\n", fsk_rx_signal_power(&s->v21_rx));
-            set_rx_handler(t, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &s->v21_rx);
+            set_rx_handler(t, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &s->v21_rx);
         }
         /*endif*/
     }
@@ -373,7 +375,6 @@ static void hdlc_underflow_handler(void *user_data)
 {
     t38_gateway_state_t *s;
     t38_gateway_hdlc_state_t *t;
-    int old_data_type;
 
     s = (t38_gateway_state_t *) user_data;
     t = &s->core.hdlc_to_modem;
@@ -382,7 +383,6 @@ static void hdlc_underflow_handler(void *user_data)
        underflow must be an end of preamble condition. */
     if ((t->buf[t->out].flags & HDLC_FLAG_PROCEED_WITH_OUTPUT))
     {
-        old_data_type = t->buf[t->out].contents;
         t->buf[t->out].len = 0;
         t->buf[t->out].flags = 0;
         t->buf[t->out].contents = 0;
@@ -432,9 +432,9 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         /* There is a handler queued, so that is the next one. */
         set_tx_handler(s, t->next_tx_handler, t->next_tx_user_data);
         set_next_tx_handler(s, NULL, NULL);
-        if (t->tx_handler == (span_tx_handler_t *) &(silence_gen)
+        if (t->tx_handler == (span_tx_handler_t) &silence_gen
             ||
-            t->tx_handler == (span_tx_handler_t *) &(tone_gen))
+            t->tx_handler == (span_tx_handler_t) &tone_gen)
         {
             set_rx_active(s, TRUE);
         }
@@ -481,23 +481,23 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         t->tx_bit_rate = 0;
         /* Impose 75ms minimum on transmitted silence */
         //silence_gen_set(&t->silence_gen, ms_to_samples(75));
-        set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
+        set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+        set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_CNG:
         t->tx_bit_rate = 0;
         modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CNG);
-        set_tx_handler(s, (span_tx_handler_t *) &modem_connect_tones_tx, &t->connect_tx);
+        set_tx_handler(s, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
         silence_gen_set(&t->silence_gen, 0);
-        set_next_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
+        set_next_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_CED:
         t->tx_bit_rate = 0;
         modem_connect_tones_tx_init(&t->connect_tx, MODEM_CONNECT_TONES_FAX_CED);
-        set_tx_handler(s, (span_tx_handler_t *) &modem_connect_tones_tx, &t->connect_tx);
-        set_next_tx_handler(s, (span_tx_handler_t *) NULL, NULL);
+        set_tx_handler(s, (span_tx_handler_t) &modem_connect_tones_tx, &t->connect_tx);
+        set_next_tx_handler(s, (span_tx_handler_t) NULL, NULL);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V21_PREAMBLE:
@@ -507,8 +507,8 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         u->buf[u->in].len = 0;
         fsk_tx_init(&t->v21_tx, &preset_fsk_specs[FSK_V21CH2], (get_bit_func_t) hdlc_tx_get_bit, &t->hdlc_tx);
-        set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t *) &fsk_tx, &t->v21_tx);
+        set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+        set_next_tx_handler(s, (span_tx_handler_t) &fsk_tx, &t->v21_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V27TER_2400_TRAINING:
@@ -526,8 +526,8 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v27ter_tx_restart(&t->v27ter_tx, t->tx_bit_rate, t->use_tep);
         v27ter_tx_set_get_bit(&t->v27ter_tx, get_bit_func, get_bit_user_data);
-        set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t *) &v27ter_tx, &t->v27ter_tx);
+        set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+        set_next_tx_handler(s, (span_tx_handler_t) &v27ter_tx, &t->v27ter_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V29_7200_TRAINING:
@@ -545,8 +545,8 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v29_tx_restart(&t->v29_tx, t->tx_bit_rate, t->use_tep);
         v29_tx_set_get_bit(&t->v29_tx, get_bit_func, get_bit_user_data);
-        set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t *) &v29_tx, &t->v29_tx);
+        set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+        set_next_tx_handler(s, (span_tx_handler_t) &v29_tx, &t->v29_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V17_7200_SHORT_TRAINING:
@@ -593,8 +593,8 @@ static int set_next_tx_type(t38_gateway_state_t *s)
         silence_gen_alter(&t->silence_gen, ms_to_samples(75));
         v17_tx_restart(&t->v17_tx, t->tx_bit_rate, t->use_tep, short_train);
         v17_tx_set_get_bit(&t->v17_tx, get_bit_func, get_bit_user_data);
-        set_tx_handler(s, (span_tx_handler_t *) &silence_gen, &t->silence_gen);
-        set_next_tx_handler(s, (span_tx_handler_t *) &v17_tx, &t->v17_tx);
+        set_tx_handler(s, (span_tx_handler_t) &silence_gen, &t->silence_gen);
+        set_next_tx_handler(s, (span_tx_handler_t) &v17_tx, &t->v17_tx);
         set_rx_active(s, TRUE);
         break;
     case T38_IND_V8_ANSAM:
@@ -2175,7 +2175,7 @@ static int restart_rx_modem(t38_gateway_state_t *s)
         s->core.fast_rx_active = T38_V29_RX;
         break;
     default:
-        set_rx_handler(s, (span_rx_handler_t *) &fsk_rx, (span_rx_fillin_handler_t *) &fsk_rx_fillin, &(s->audio.modems.v21_rx));
+        set_rx_handler(s, (span_rx_handler_t) &fsk_rx, (span_rx_fillin_handler_t) &fsk_rx_fillin, &(s->audio.modems.v21_rx));
         s->core.fast_rx_active = T38_NONE;
         break;
     }
@@ -2383,7 +2383,7 @@ SPAN_DECLARE(void) t38_gateway_set_fill_bit_removal(t38_gateway_state_t *s, int 
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(void) t38_gateway_set_real_time_frame_handler(t38_gateway_state_t *s,
-                                                           t38_gateway_real_time_frame_handler_t *handler,
+                                                           t38_gateway_real_time_frame_handler_t handler,
                                                            void *user_data)
 {
     s->core.real_time_frame_handler = handler;
@@ -2414,7 +2414,7 @@ static int t38_gateway_audio_init(t38_gateway_state_t *s)
 /*- End of function --------------------------------------------------------*/
 
 static int t38_gateway_t38_init(t38_gateway_state_t *t,
-                                t38_tx_packet_handler_t *tx_packet_handler,
+                                t38_tx_packet_handler_t tx_packet_handler,
                                 void *tx_packet_user_data)
 {
     t38_gateway_t38_state_t *s;
@@ -2437,7 +2437,7 @@ static int t38_gateway_t38_init(t38_gateway_state_t *t,
 /*- End of function --------------------------------------------------------*/
 
 SPAN_DECLARE(t38_gateway_state_t *) t38_gateway_init(t38_gateway_state_t *s,
-                                                     t38_tx_packet_handler_t *tx_packet_handler,
+                                                     t38_tx_packet_handler_t tx_packet_handler,
                                                      void *tx_packet_user_data)
 {
     if (tx_packet_handler == NULL)

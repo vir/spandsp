@@ -33,10 +33,10 @@
 typedef struct
 {
     fax_modems_state_t modems;
-    //v8_state_t v8;
+    v8_state_t v8;
 
     /*! The transmit signal handler to be used when the current one has finished sending. */
-    span_tx_handler_t *next_tx_handler;
+    span_tx_handler_t next_tx_handler;
     void *next_tx_user_data;
 
     /*! \brief No of data bits in current_byte. */
@@ -136,7 +136,7 @@ typedef struct
 struct t31_state_s
 {
     at_state_t at_state;
-    t31_modem_control_handler_t *modem_control_handler;
+    t31_modem_control_handler_t modem_control_handler;
     void *modem_control_user_data;
 
     t31_audio_front_end_state_t audio;

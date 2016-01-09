@@ -44,6 +44,9 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
+#include "spandsp/math_fixed.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -236,13 +239,17 @@ static void equalizer_reset(v17_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINTx)
+    static const complexi16_t x = {3*FP_FACTOR, 0};
+
     cvec_zeroi16(s->eq_coeff, V17_EQUALIZER_LEN);
-    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = complex_seti16(3*FP_FACTOR, 0);
+    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
     cvec_zeroi16(s->eq_buf, V17_EQUALIZER_LEN);
     s->eq_delta = 32768.0f*EQUALIZER_DELTA/V17_EQUALIZER_LEN;
 #else
+    static const complexf_t x = {3.0f, 0.0f};
+
     cvec_zerof(s->eq_coeff, V17_EQUALIZER_LEN);
-    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = complex_setf(3.0f, 0.0f);
+    s->eq_coeff[V17_EQUALIZER_PRE_LEN] = x;
     cvec_zerof(s->eq_buf, V17_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V17_EQUALIZER_LEN;
 #endif
@@ -358,7 +365,11 @@ static __inline__ float dist_sq(const complexf_t *x, const complexf_t *y)
 /*- End of function --------------------------------------------------------*/
 #endif
 
+#if defined(SPANDSP_USE_FIXED_POINTx)
+static int decode_baud(v17_rx_state_t *s, complexi16_t *z)
+#else
 static int decode_baud(v17_rx_state_t *s, complexf_t *z)
+#endif
 {
     static const uint8_t v32bis_4800_differential_decoder[4][4] =
     {
@@ -628,7 +639,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
     static const complexi16_t zero = {0, 0};
 #else
     const complexf_t *target;
-    static const complexf_t zero = {0, 0};
+    static const complexf_t zero = {0.0f, 0.0f};
 #endif
     float p;
     int bit;
@@ -747,7 +758,7 @@ static void process_half_baud(v17_rx_state_t *s, const complexf_t *sample)
                 s->carrier_phase_rate += 3*16*(ang/20);
                 span_log(&s->logging, SPAN_LOG_FLOW, "Angles %x, %x, dist %d\n", s->last_angles[0], s->last_angles[1], i);
             }
-            span_log(&s->logging, SPAN_LOG_FLOW, "Second coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
+            span_log(&s->logging, SPAN_LOG_FLOW, "Coarse carrier frequency %7.2f (%d)\n", dds_frequencyf(s->carrier_phase_rate), s->training_count);
             /* Check if the carrier frequency is plausible */
             if (s->carrier_phase_rate < DDS_PHASE_RATE(CARRIER_NOMINAL_FREQ - 20.0f)
                 ||
@@ -1229,7 +1240,7 @@ SPAN_DECLARE(void) v17_rx_set_put_bit(v17_rx_state_t *s, put_bit_func_t put_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v17_rx_set_modem_status_handler(v17_rx_state_t *s, modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;

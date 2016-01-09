@@ -58,6 +58,7 @@
 #include "spandsp/v29tx.h"
 #include "spandsp/v27ter_rx.h"
 #include "spandsp/v27ter_tx.h"
+#include "spandsp/timezone.h"
 #include "spandsp/t4_rx.h"
 #include "spandsp/t4_tx.h"
 #if defined(SPANDSP_SUPPORT_T85)
@@ -73,6 +74,7 @@
 #include "spandsp/t30_logging.h"
 
 #include "spandsp/private/logging.h"
+#include "spandsp/private/timezone.h"
 #if defined(SPANDSP_SUPPORT_T85)
 #include "spandsp/private/t81_t82_arith_coding.h"
 #include "spandsp/private/t85.h"
@@ -573,8 +575,13 @@ SPAN_DECLARE(int) t30_set_tx_page_header_info(t30_state_t *s, const char *info)
 
 SPAN_DECLARE(int) t30_set_tx_page_header_tz(t30_state_t *s, const char *tzstring)
 {
-    t4_tx_set_header_tz(&s->t4.tx, tzstring);
-    return 0;
+    if (tz_init(&s->tz, tzstring))
+    {
+        s->use_own_tz = TRUE;
+        t4_tx_set_header_tz(&s->t4.tx, &s->tz);
+        return 0;
+    }
+    return -1;
 }
 /*- End of function --------------------------------------------------------*/
 
@@ -735,35 +742,35 @@ SPAN_DECLARE(int) t30_set_receiver_not_ready(t30_state_t *s, int count)
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_phase_b_handler(t30_state_t *s, t30_phase_b_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_phase_b_handler(t30_state_t *s, t30_phase_b_handler_t handler, void *user_data)
 {
     s->phase_b_handler = handler;
     s->phase_b_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_phase_d_handler(t30_state_t *s, t30_phase_d_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_phase_d_handler(t30_state_t *s, t30_phase_d_handler_t handler, void *user_data)
 {
     s->phase_d_handler = handler;
     s->phase_d_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_phase_e_handler(t30_state_t *s, t30_phase_e_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_phase_e_handler(t30_state_t *s, t30_phase_e_handler_t handler, void *user_data)
 {
     s->phase_e_handler = handler;
     s->phase_e_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_document_handler(t30_state_t *s, t30_document_handler_t handler, void *user_data)
 {
     s->document_handler = handler;
     s->document_user_data = user_data;
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t *handler, void *user_data)
+SPAN_DECLARE(void) t30_set_real_time_frame_handler(t30_state_t *s, t30_real_time_frame_handler_t handler, void *user_data)
 {
     s->real_time_frame_handler = handler;
     s->real_time_frame_user_data = user_data;

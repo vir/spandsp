@@ -36,12 +36,6 @@ modem control commands.
 \section at_page_sec_2 How does it work?
 */
 
-typedef struct at_state_s at_state_t;
-
-typedef int (at_modem_control_handler_t)(at_state_t *s, void *user_data, int op, const char *num);
-typedef int (at_tx_handler_t)(at_state_t *s, void *user_data, const uint8_t *buf, size_t len);
-typedef int (at_class1_handler_t)(at_state_t *s, void *user_data, int direction, int operation, int val);
-
 enum at_rx_mode_e
 {
     AT_MODE_ONHOOK_COMMAND,
@@ -110,6 +104,12 @@ enum
     AT_RESPONSE_CODE_FRH3
 };
 
+typedef struct at_state_s at_state_t;
+
+typedef int (*at_modem_control_handler_t)(at_state_t *s, void *user_data, int op, const char *num);
+typedef int (*at_tx_handler_t)(at_state_t *s, void *user_data, const uint8_t *buf, size_t len);
+typedef int (*at_class1_handler_t)(at_state_t *s, void *user_data, int direction, int operation, int val);
+
 /*!
     AT profile.
 */
@@ -172,9 +172,9 @@ SPAN_DECLARE(void) at_set_class1_handler(at_state_t *s, at_class1_handler_t hand
     \param modem_control_user_data x.
     \return A pointer to the AT context, or NULL if there was a problem. */
 SPAN_DECLARE(at_state_t *) at_init(at_state_t *s,
-                                   at_tx_handler_t *at_tx_handler,
+                                   at_tx_handler_t at_tx_handler,
                                    void *at_tx_user_data,
-                                   at_modem_control_handler_t *modem_control_handler,
+                                   at_modem_control_handler_t modem_control_handler,
                                    void *modem_control_user_data);
 
 /*! Release an AT interpreter context.

@@ -88,7 +88,11 @@ SPAN_DECLARE_NONSTD(int) v22bis_rx_fillin(v22bis_state_t *s, int len);
     \brief Get a snapshot of the current equalizer coefficients.
     \param coeffs The vector of complex coefficients.
     \return The number of coefficients in the vector. */
+#if defined(SPANDSP_USE_FIXED_POINTx)
+SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexi16_t **coeffs);
+#else
 SPAN_DECLARE(int) v22bis_rx_equalizer_state(v22bis_state_t *s, complexf_t **coeffs);
+#endif
 
 /*! Get the current received carrier frequency.
     \param s The modem context.
@@ -213,7 +217,7 @@ SPAN_DECLARE(void) v22bis_set_put_bit(v22bis_state_t *s, put_bit_func_t put_bit,
     \param s The modem context.
     \param handler The callback routine used to report modem status changes.
     \param user_data An opaque pointer. */
-SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_rx_status_func_t handler, void *user_data);
+SPAN_DECLARE(void) v22bis_set_modem_status_handler(v22bis_state_t *s, modem_status_func_t handler, void *user_data);
 
 #if defined(__cplusplus)
 }

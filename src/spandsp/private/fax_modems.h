@@ -79,9 +79,9 @@ struct fax_modems_state_s
     /*! \brief */
     dc_restore_state_t dc_restore;
 
-    /*! \brief The currently select receiver type */
+    /*! \brief The currently selected receiver type */
     int current_rx_type;
-    /*! \brief The currently select transmitter type */
+    /*! \brief The currently selected transmitter type */
     int current_tx_type;
 
     /*! \brief TRUE if a carrier is present. Otherwise FALSE. */
@@ -91,27 +91,27 @@ struct fax_modems_state_s
     /*! \brief TRUE if an HDLC frame has been received correctly. */
     int rx_frame_received;
 
-    /*! The current receive signal handler */
-    span_rx_handler_t *rx_handler;
-    /*! The current receive missing signal fill-in handler */
-    span_rx_fillin_handler_t *rx_fillin_handler;
+    /*! \brief The current receive signal handler */
+    span_rx_handler_t rx_handler;
+    /*! \brief The current receive missing signal fill-in handler */
+    span_rx_fillin_handler_t rx_fillin_handler;
     void *rx_user_data;
 
-    /*! The current transmit signal handler */
-    span_tx_handler_t *tx_handler;
+    /*! \brief The current transmit signal handler */
+    span_tx_handler_t tx_handler;
     void *tx_user_data;
 
-    /*! The next transmit signal handler, for two stage transmit operations.
-        E.g. a short silence followed by a modem signal. */
-    span_tx_handler_t *next_tx_handler;
+    /*! \brief The next transmit signal handler, for two stage transmit operations.
+               E.g. a short silence followed by a modem signal. */
+    span_tx_handler_t next_tx_handler;
     void *next_tx_user_data;
 
-    /*! The current bit rate of the transmitter. */
+    /*! \brief The current bit rate of the transmitter. */
     int tx_bit_rate;
-    /*! The current bit rate of the receiver. */
+    /*! \brief The current bit rate of the receiver. */
     int rx_bit_rate;
 
-    /*! If TRUE, transmission is in progress */
+    /*! \brief If TRUE, transmission is in progress */
     int transmit;
     /*! \brief Audio logging file handle for received audio. */
     int audio_rx_log;

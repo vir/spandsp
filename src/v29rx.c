@@ -44,6 +44,9 @@
 
 #include "spandsp/telephony.h"
 #include "spandsp/logging.h"
+#include "spandsp/fast_convert.h"
+#include "spandsp/math_fixed.h"
+#include "spandsp/saturated.h"
 #include "spandsp/complex.h"
 #include "spandsp/vector_float.h"
 #include "spandsp/complex_vector_float.h"
@@ -227,13 +230,17 @@ static void equalizer_reset(v29_rx_state_t *s)
 {
     /* Start with an equalizer based on everything being perfect */
 #if defined(SPANDSP_USE_FIXED_POINT)
+    static const complexi16_t x = {3*FP_FACTOR, 0*FP_FACTOR};
+
     cvec_zeroi16(s->eq_coeff, V29_EQUALIZER_LEN);
-    s->eq_coeff[V29_EQUALIZER_PRE_LEN] = complex_seti16(3*FP_FACTOR, 0*FP_FACTOR);
+    s->eq_coeff[V29_EQUALIZER_PRE_LEN] = x;
     cvec_zeroi16(s->eq_buf, V29_EQUALIZER_LEN);
     s->eq_delta = 32768.0f*EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #else
+    static const complexf_t x = {3.0f, 0.0f};
+
     cvec_zerof(s->eq_coeff, V29_EQUALIZER_LEN);
-    s->eq_coeff[V29_EQUALIZER_PRE_LEN] = complex_setf(3.0f, 0.0f);
+    s->eq_coeff[V29_EQUALIZER_PRE_LEN] = x;
     cvec_zerof(s->eq_buf, V29_EQUALIZER_LEN);
     s->eq_delta = EQUALIZER_DELTA/V29_EQUALIZER_LEN;
 #endif
@@ -535,7 +542,7 @@ static __inline__ void symbol_sync(v29_rx_state_t *s)
         i = (v > 1000.0f)  ?  5  :  1;
         if (s->baud_phase < 0.0f)
             i = -i;
-        //printf("v = %10.5f %5d - %f %f %d %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
+        //printf("v = %10.5f %5d - %f %f %d\n", v, i, p, s->baud_phase, s->total_baud_timing_correction);
         s->eq_put_step += i;
         s->total_baud_timing_correction += i;
     }
@@ -716,11 +723,12 @@ static void process_half_baud(v29_rx_state_t *s, complexf_t *sample)
         if (++s->training_count >= V29_TRAINING_SEG_3_LEN - 48)
         {
             s->training_stage = TRAINING_STAGE_TRAIN_ON_CDCD_AND_TEST;
-            s->training_error = 0.0f;
 #if defined(SPANDSP_USE_FIXED_POINT)
+            s->training_error = 0;
             s->carrier_track_i = 200;
             s->carrier_track_p = 1000000;
 #else
+            s->training_error = 0.0f;
             s->carrier_track_i = 200.0f;
             s->carrier_track_p = 1000000.0f;
 #endif
@@ -943,10 +951,12 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
            parked, after training failure. */
         s->eq_put_step -= RX_PULSESHAPER_COEFF_SETS;
         step = -s->eq_put_step;
-        if (step > RX_PULSESHAPER_COEFF_SETS - 1)
-            step = RX_PULSESHAPER_COEFF_SETS - 1;
         if (step < 0)
             step += RX_PULSESHAPER_COEFF_SETS;
+        if (step < 0)
+            step = 0;
+        else if (step > RX_PULSESHAPER_COEFF_SETS - 1)
+            step = RX_PULSESHAPER_COEFF_SETS - 1;
 #if defined(SPANDSP_USE_FIXED_POINT)
         v = vec_circular_dot_prodi16(s->rrc_filter, rx_pulseshaper_re[step], V29_RX_FILTER_STEPS, s->rrc_filter_step);
         sample.re = (v*s->agc_scaling) >> 15;
@@ -982,10 +992,10 @@ SPAN_DECLARE_NONSTD(int) v29_rx(v29_rx_state_t *s, const int16_t amp[], int len)
             /* Only AGC until we have locked down the setting. */
 #if defined(SPANDSP_USE_FIXED_POINT)
             if (s->agc_scaling_save == 0)
-                s->agc_scaling = (float) FP_FACTOR*32768.0f*(1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
+                s->agc_scaling = (float) FP_FACTOR*32768.0f*(1.0f/RX_PULSESHAPER_GAIN)*1.25f/sqrtf(power);
 #else
             if (s->agc_scaling_save == 0.0f)
-                s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*5.0f*0.25f/sqrtf(power);
+                s->agc_scaling = (1.0f/RX_PULSESHAPER_GAIN)*1.25f/sqrtf(power);
 #endif
             /* Pulse shape while still at the carrier frequency, using a quadrature
                pair of filters. This results in a properly bandpass filtered complex
@@ -1052,7 +1062,7 @@ SPAN_DECLARE(void) v29_rx_set_put_bit(v29_rx_state_t *s, put_bit_func_t put_bit,
 }
 /*- End of function --------------------------------------------------------*/
 
-SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_tx_status_func_t handler, void *user_data)
+SPAN_DECLARE(void) v29_rx_set_modem_status_handler(v29_rx_state_t *s, modem_status_func_t handler, void *user_data)
 {
     s->status_handler = handler;
     s->status_user_data = user_data;
