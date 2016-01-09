@@ -835,6 +835,27 @@ static void monitor_control_messages(t38_gateway_state_t *s,
         s->core.image_data_mode = FALSE;
         s->core.short_train = FALSE;
         break;
+    case T30_CTC:
+        if (len >= 5)
+        {
+            /* The table is short, and not searched often, so a brain-dead linear scan seems OK */
+            dcs_code = buf[4] & (DISBIT6 | DISBIT5 | DISBIT4 | DISBIT3);
+            for (i = 0;  modem_codes[i].bit_rate;  i++)
+            {
+                if (modem_codes[i].dcs_code == dcs_code)
+                    break;
+                /*endif*/
+            }
+            /*endfor*/
+            /* If we are processing a message from the modem side, the contents determine the fast receive modem.
+               we are to use. If it comes from the T.38 side the contents do not. */
+            s->core.fast_bit_rate = modem_codes[i].bit_rate;
+            if (from_modem)
+                s->core.fast_rx_modem = modem_codes[i].modem_type;
+            /*endif*/
+        }
+        /*endif*/
+        break;
     case T30_CTR:
         /* T.30 says the first image data after this does full training, yet does not
            return to TCF. This seems to be the sole case of long training for image
