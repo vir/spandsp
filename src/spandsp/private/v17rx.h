@@ -72,6 +72,13 @@ struct v17_rx_state_s
                routine. */
     void *qam_user_data;
 
+#if 1 //defined(RESCALER_TEST)
+    /* Experimental data for AGC tolerance */
+    int16_t power_window[40];
+    int power_window_ptr;
+    int64_t window_power;
+    int64_t window_power_save;
+#endif
 #if defined(SPANDSP_USE_FIXED_POINTx)
     /*! \brief The scaling factor accessed by the AGC algorithm. */
     float agc_scaling;
